@@ -100,6 +100,12 @@ abstract class ScanCornerLayer extends ScanLayer {
     return path;
   }
 
+  /// The glow strength applied to the brackets.
+  ///
+  /// Overridden by [ScanCornerStyle.glowing], which forces a minimum bloom.
+  @protected
+  double glowFor(ScanFxFrame frame) => frame.glow;
+
   @override
   void paint(Canvas canvas, Size size, ScanFxFrame frame) {
     final color = ScanFxPalette.fade(colorFor(frame), frame.reveal);
@@ -107,7 +113,7 @@ abstract class ScanCornerLayer extends ScanLayer {
 
     final path = bracketPath(frame);
     final width = frame.theme.cornerStrokeWidth;
-    final sigma = ScanGlow.sigmaFor(frame.glow, width);
+    final sigma = ScanGlow.sigmaFor(glowFor(frame), width);
 
     if (sigma > 0) {
       cache.applyGlowBlur(sigma);
