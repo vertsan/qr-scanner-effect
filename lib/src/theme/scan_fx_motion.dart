@@ -46,11 +46,6 @@ class ScanFxMotion {
       stiffness: 200,
       damping: 16.97,
     ),
-    this.pulseSpring = const SpringDescription(
-      mass: 1,
-      stiffness: 320,
-      damping: 30,
-    ),
     this.reducedSpring = const SpringDescription(
       mass: 1,
       stiffness: 2600,
@@ -133,9 +128,6 @@ class ScanFxMotion {
   /// Spring used by [ScanLockStyle.zoomIn].
   final SpringDescription zoomSpring;
 
-  /// Spring used by the lock-on pulse ring.
-  final SpringDescription pulseSpring;
-
   /// A very stiff spring that settles in a few frames, used when
   /// [reduceMotion] is set so the same code path still runs.
   final SpringDescription reducedSpring;
@@ -193,7 +185,6 @@ class ScanFxMotion {
       calmLockSpring: calmLockSpring,
       resetSpring: resetSpring,
       zoomSpring: zoomSpring,
-      pulseSpring: pulseSpring,
       reducedSpring: reducedSpring,
       reduceMotion: reduceMotion,
       shakeCycles: shakeCycles,
@@ -221,7 +212,6 @@ class ScanFxMotion {
       other.calmLockSpring == calmLockSpring &&
       other.resetSpring == resetSpring &&
       other.zoomSpring == zoomSpring &&
-      other.pulseSpring == pulseSpring &&
       other.reducedSpring == reducedSpring &&
       other.reduceMotion == reduceMotion &&
       other.shakeCycles == shakeCycles &&
@@ -246,7 +236,6 @@ class ScanFxMotion {
         calmLockSpring,
         resetSpring,
         zoomSpring,
-        pulseSpring,
         reducedSpring,
         reduceMotion,
         shakeCycles,

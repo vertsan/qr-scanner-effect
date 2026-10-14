@@ -40,7 +40,7 @@ class ScanFxDirector extends ChangeNotifier {
   })  : _theme = theme,
         _idle = ScanFxRegistry.idleModifier(theme.idleStyle),
         _focus = ScanFxSpringValue(
-          description: theme.motion.effectiveLockSpring,
+          description: theme.lockSpring,
         ),
         _beamSpan = ScanFxTimedValue(value: 1),
         _breath = ScanFxTimedValue(value: 1),
@@ -435,11 +435,15 @@ class ScanFxDirector extends ChangeNotifier {
         }
 
       case ScanFxState.locked:
-        spring(_focus, 1, m.effectiveLockSpring);
+        spring(_focus, 1, _theme.lockSpring);
         timed(_beamSpan, 0, m.beamRetract, ScanFxEasing.converge);
         timed(_dim, 1, m.backdropDeepen, ScanFxEasing.ambient);
         timed(_hint, 0, m.hint, ScanFxEasing.release);
         _holdArmed = false;
+        // The pulse is a timed `0..1` progress rather than a spring: layers ease
+        // it themselves and stop drawing the moment it reaches `1`, which is what
+        // makes the ring free once it has landed. `lockConverge` is the window it
+        // shares with the bracket convergence.
         if (_reduceMotion) {
           _pulse.jumpTo(1);
         } else {
@@ -447,7 +451,7 @@ class ScanFxDirector extends ChangeNotifier {
           _pulse.animateTo(
             1,
             duration: _theme.lock.pulseStrength > 0
-                ? const Duration(milliseconds: 420)
+                ? m.effective(m.lockConverge)
                 : Duration.zero,
             curve: Curves.linear,
           );

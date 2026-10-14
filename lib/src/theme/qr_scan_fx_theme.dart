@@ -417,13 +417,17 @@ class QrScanFxTheme extends ThemeExtension<QrScanFxTheme> {
 
   /// The lock spring this theme should use, accounting for the lock style and
   /// reduce-motion.
-  SpringDescription get lockSpring => switch (lockStyle) {
-        ScanLockStyle.smoothMorph => motion.calmLockSpring,
-        ScanLockStyle.zoomIn => motion.zoomSpring,
-        ScanLockStyle.springSnap ||
-        ScanLockStyle.none =>
-          motion.effectiveLockSpring,
-      };
+  ///
+  /// Reduce-motion wins over the style: the point of the reduced spring is that
+  /// it settles in a few frames, and a style that swapped in a softer spring
+  /// would quietly opt back out of that.
+  SpringDescription get lockSpring => motion.reduceMotion
+      ? motion.reducedSpring
+      : switch (lockStyle) {
+          ScanLockStyle.smoothMorph => motion.calmLockSpring,
+          ScanLockStyle.zoomIn => motion.zoomSpring,
+          ScanLockStyle.springSnap || ScanLockStyle.none => motion.lockSpring,
+        };
 
   /// Returns a copy with the frame composited over [overlay].
   ///
