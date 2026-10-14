@@ -49,7 +49,15 @@ export 'src/geometry/scan_fx_quad.dart' show ScanFxQuad;
 export 'src/geometry/scan_fx_shapes.dart' show ScanFxShapes;
 export 'src/geometry/scan_fx_target.dart' show ScanFxTarget;
 export 'src/geometry/scan_geometry_mapper.dart' show ScanGeometryMapper;
+export 'src/layers/backdrop/scan_backdrop_layer.dart' show ScanBackdropLayer;
+export 'src/layers/beam/scan_beam_layer.dart' show ScanBeamLayer;
+export 'src/layers/corners/scan_corner_layer.dart' show ScanCornerLayer;
+export 'src/layers/effects/scan_effect_layer.dart'
+    show NoEffectLayer, ScanEffectLayer;
+export 'src/layers/frame/scan_frame_layer.dart' show ScanFrameLayer;
 export 'src/layers/hint/scan_hint_layer.dart' show ScanHintLayer, ScanHintView;
+export 'src/layers/idle/scan_fx_idle_modifier.dart'
+    show ScanFxIdleModifier, ScanFxIdleTransform;
 export 'src/layers/scan_fx_registry.dart' show ScanFxRegistry;
 export 'src/layers/scan_layer.dart' show CustomScanLayer, ScanLayer;
 export 'src/layers/scan_layer_stack.dart' show ScanLayerEntry, ScanLayerStack;
