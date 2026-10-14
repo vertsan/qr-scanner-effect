@@ -26,7 +26,7 @@ class DotCorners extends ScanCornerLayer {
     for (var i = 0; i < 4; i++) {
       ScanGlow.circle(
         canvas,
-        bracketOrigin(quad, i, inset),
+        ScanCornerLayer.bracketOrigin(quad, i, inset),
         radius,
         color,
         sigma,

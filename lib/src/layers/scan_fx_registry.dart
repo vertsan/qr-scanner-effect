@@ -45,7 +45,8 @@ import 'scan_layer_stack.dart';
 /// * a new style is one file plus one arm here;
 /// * the overlay never switches on a style at paint time.
 ///
-/// All implementations are `const`, so building a stack allocates only the list.
+/// All implementations are built once per stack, and each keeps its own cache, so
+/// neither building the stack nor painting a frame allocates in the steady state.
 abstract final class ScanFxRegistry {
   /// The frame layer for [shape].
   static ScanFrameLayer frame(ScanFrameShape shape) => switch (shape) {

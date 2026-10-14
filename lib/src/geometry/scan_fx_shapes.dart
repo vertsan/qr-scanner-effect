@@ -108,7 +108,7 @@ class ScanFxShapes {
   static Path roundedQuad(ScanFxQuad quad, double radius) {
     final path = Path();
     final pts = quad.points;
-    final r = math.max(0, radius);
+    final r = math.max(0.0, radius);
     for (var i = 0; i < 4; i++) {
       final corner = pts[i];
       final next = pts[(i + 1) % 4];

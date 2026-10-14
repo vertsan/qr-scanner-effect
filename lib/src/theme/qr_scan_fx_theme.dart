@@ -252,12 +252,18 @@ class QrScanFxTheme extends ThemeExtension<QrScanFxTheme> {
       beamColor: HSLColor.fromAHSL(1, (hue + 30) % 360, 0.8, 0.7).toColor(),
       beamAccentColor: isDark ? Colors.white : backdrop,
       backdropColor: backdrop,
-      successColor:
-          ScanFxPalette.ensureContrast(HSLColor.fromAHSL(1, 152, 0.6, 0.5).toColor(), backdrop),
-      errorColor:
-          ScanFxPalette.ensureContrast(HSLColor.fromAHSL(1, 4, 0.7, 0.55).toColor(), backdrop),
-      invalidColor:
-          ScanFxPalette.ensureContrast(HSLColor.fromAHSL(1, 38, 0.8, 0.55).toColor(), backdrop),
+      successColor: ScanFxPalette.ensureContrast(
+        const HSLColor.fromAHSL(1, 152, 0.6, 0.5).toColor(),
+        backdrop,
+      ),
+      errorColor: ScanFxPalette.ensureContrast(
+        const HSLColor.fromAHSL(1, 4, 0.7, 0.55).toColor(),
+        backdrop,
+      ),
+      invalidColor: ScanFxPalette.ensureContrast(
+        const HSLColor.fromAHSL(1, 38, 0.8, 0.55).toColor(),
+        backdrop,
+      ),
       hintBackgroundColor: hintBackground,
       hintTextColor:
           ScanFxPalette.ensureContrast(isDark ? Colors.white : accent, hintBackground),
@@ -520,16 +526,16 @@ class QrScanFxTheme extends ThemeExtension<QrScanFxTheme> {
           Color.lerp(hintBackgroundColor, other.hintBackgroundColor, t)!,
       hintTextColor: Color.lerp(hintTextColor, other.hintTextColor, t)!,
       scrimColor: Color.lerp(scrimColor, other.scrimColor, t)!,
-      glowStrength: lerpDouble(glowStrength, other.glowStrength, t),
-      squircleExponent: lerpDouble(squircleExponent, other.squircleExponent, t),
+      glowStrength: lerpDouble(glowStrength, other.glowStrength, t)!,
+      squircleExponent: lerpDouble(squircleExponent, other.squircleExponent, t)!,
       frameShape: discrete ? frameShape : other.frameShape,
       cornerStyle: discrete ? cornerStyle : other.cornerStyle,
-      cornerRadius: lerpDouble(cornerRadius, other.cornerRadius, t),
-      frameStrokeWidth: lerpDouble(frameStrokeWidth, other.frameStrokeWidth, t),
+      cornerRadius: lerpDouble(cornerRadius, other.cornerRadius, t)!,
+      frameStrokeWidth: lerpDouble(frameStrokeWidth, other.frameStrokeWidth, t)!,
       cornerStrokeWidth:
-          lerpDouble(cornerStrokeWidth, other.cornerStrokeWidth, t),
+          lerpDouble(cornerStrokeWidth, other.cornerStrokeWidth, t)!,
       cornerArmFraction:
-          lerpDouble(cornerArmFraction, other.cornerArmFraction, t),
+          lerpDouble(cornerArmFraction, other.cornerArmFraction, t)!,
       backdropStyle: discrete ? backdropStyle : other.backdropStyle,
       beamStyle: discrete ? beamStyle : other.beamStyle,
       lockStyle: discrete ? lockStyle : other.lockStyle,

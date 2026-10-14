@@ -16,7 +16,7 @@ import '../theme/scan_fx_style.dart';
 ///
 /// ```dart
 /// class MyBeam extends ScanLayer {
-///   const MyBeam();
+///   MyBeam();
 ///
 ///   @override
 ///   ScanLayerKind get kind => ScanLayerKind.beam;
@@ -28,8 +28,13 @@ import '../theme/scan_fx_style.dart';
 /// }
 /// ```
 abstract class ScanLayer {
-  /// Const constructor so layers can be `const` and cheap to rebuild.
-  const ScanLayer();
+  /// Creates a layer.
+  ///
+  /// Layers are deliberately **not** `const`: a style keeps its `Paint` and
+  /// `Path` caches as mutable fields so that [paint] never allocates. The
+  /// overlay builds the stack once and keeps those instances alive, which is
+  /// what makes the caches worth having.
+  ScanLayer();
 
   /// Which slot this layer occupies. Used for ordering, hiding and replacing.
   ScanLayerKind get kind;
@@ -78,7 +83,7 @@ abstract class ScanLayer {
 /// Wraps a host-supplied [CustomPainter] so it can be dropped into the stack.
 class CustomScanLayer extends ScanLayer {
   /// Creates a layer from a painter.
-  const CustomScanLayer(
+  CustomScanLayer(
     this.painter, {
     this.layerKind = ScanLayerKind.effects,
     this.isAnimated = true,

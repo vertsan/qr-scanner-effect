@@ -358,7 +358,7 @@ class ScanFxDirector extends ChangeNotifier {
     final padding = _theme.lock.padding * _theme.tunables.intensity;
     _lockedQuad = quad
         .inflateAlongNormals(padding)
-        .fitInside(overlay.deflate(4));
+        .fitInside((Offset.zero & overlay).deflate(4));
   }
 
   // ---------------------------------------------------------------------------
