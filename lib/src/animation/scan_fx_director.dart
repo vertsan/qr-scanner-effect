@@ -417,10 +417,19 @@ class ScanFxDirector extends ChangeNotifier {
         timed(_hint, 0, m.hint, ScanFxEasing.release);
         timed(_reveal, 1, m.start, ScanFxEasing.start);
         _pulse.jumpTo(0);
-        _holdArmed = controller.autoLock && !_reduceMotion;
+        // The hold is what gives a noisy 30 fps detector a stable window, so it
+        // runs under reduce-motion too — a scanner that never reaches `locked`
+        // is not "calmer", it is broken. Reduce-motion simply caps the hold at
+        // [ScanFxMotion.microFade] instead of animating it, and `active` stays
+        // true for that one tick so the state machine is still advanced.
+        _holdArmed = controller.autoLock;
         if (_holdArmed) {
           _hold.jumpTo(0);
-          _hold.animateTo(1, duration: m.lockHold, curve: Curves.linear);
+          _hold.animateTo(
+            1,
+            duration: m.effective(m.lockHold),
+            curve: Curves.linear,
+          );
         } else {
           _hold.jumpTo(1);
         }

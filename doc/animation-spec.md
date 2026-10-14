@@ -43,7 +43,7 @@ precomputed reciprocals — no divisions or allocations in `paint()`.
 | `lockHoldMs` | 140 ms | `detected → locked` auto-advance |
 | `settleEpsilon` | 0.001 | spring rest threshold |
 | `maxOverlayTextMs` | 400 ms | banking hard cap (rule) |
-| `refreshGuard` | 500 ms | min spacing between semantics announcements |
+| `annotationPolicy` | — | announcements are **implicit**: a `liveRegion` `Semantics` label that changes with the state (no `refreshGuard`; the label only changes on a real transition, and `detected`/`locked` share wording so the hold never double-speaks) |
 
 ---
 
@@ -90,7 +90,7 @@ IDLE ─────► SCANNING ─┬─► DETECTED ──► LOCKED ──�
 | T4 | `locked → success` | 900 ms total | see §4.1 | success layer effects, then hold |
 | T5 | `* → error` | 620 ms total | see §4.2 | shake + tint, then hold |
 | T6 | `* → invalid` | 380 ms total | see §4.3 | calm blink + message slot, then hold |
-| T7 | `any → reset` | 300 ms | `easeInOutCubic` | current quad → default area, tint → base, alpha → scan baseline |
+| T7 | `any → reset` | **spring** ≈ 300 ms settle | spring **R1** | current quad → default area, tint → base, alpha → scan baseline |
 
 `detected` is transient by default (`autoLock: true`) so T2 and T3 read as one
 continuous "lock-on" to the eye: a spring morph followed by a soft bracket
@@ -145,6 +145,13 @@ Flutter `SpringDescription(mass, stiffness, damping)`; `ζ = damping / (2·√(k
 | S6 | `bracketCollapse` | 1 | 300 | 24.25 | 0.70 | ~300 ms | ≈ 5 % | `lock.bracketCollapse` inset |
 | S7 | `pulseLock` | 1 | 320 | 30.00 | 0.84 | ~280 ms | ≈ 2 % | **P1** lock pulse scale |
 | S8 | `glitchLock` | 1 | 420 | 21.00 | 0.51 | ~520 ms | ≈ 18 % | `lock.glitchLock` (intentionally bouncy) |
+| **R1** | `resetSpring` | 1 | 260 | 32.25 | 1.00 | ~300 ms | 0 % | T7 return to the default area |
+| **RX** | `reducedSpring` | 1 | 2600 | 102.0 | 1.00 | ~60 ms | 0 % | every spring under reduce-motion |
+
+`R1` is critically damped on purpose: returning to the scan area is a *reset*, and
+an overshoot there reads as an error rather than as momentum. `RX` is the
+same trick at a much higher stiffness — it settles inside a few frames so the
+reduce-motion path still runs the identical code with no visible spring.
 
 Non-spring motions:
 
@@ -153,7 +160,6 @@ Non-spring motions:
 | N1 | `errorShake` | `A·e^(−t/τ)·sin(2π·f·t)`, A=10 px, τ=120 ms, f=14 Hz, 420 ms |
 | N2 | `confetti` | linear velocity + `g = 1400 px/s²`, landing at t=0.45 of the burst |
 | N3 | `glitchJump` | 3 stepped offsets (6/0/−4 px) with 40 ms holds + 2 alpha dropouts |
-| N4 | `resetReturn` | `easeInOutCubic`, 300 ms, quad lerp |
 
 **P1 — lock pulse:** scale 1 → 1.06 → 1.0 via S7, plus an expanding ring from the
 locked quad: r 0.5·minSide → 1.15·minSide, alpha 0.60 → 0, 400 ms `easeOutQuint`.
@@ -204,16 +210,17 @@ lock-on reads as one object rather than four layers chasing each other.
 
 | Tunable | Range | Effect | Reset animation? |
 |---|---|---|---|
-| `intensity` | 0..1 | scales alpha, glow amplitude, padding, particle count | no |
-| `speedMultiplier` | 0.25..3 (clamped) | divides all durations; spring `dt` scaled | no — progress preserved, springs re-seeded |
-| `glow` | 0..1 | blur sigma / shader intensity; `0` = no blur pass | no |
-| `cornerRadius` | 0..0.5·minSide | path rebuild only when delta > 0.25 px | no |
+| `intensity` | 0..1 | scales alpha, glow amplitude and lock padding | no |
+| `speed` | 0.25..3 (clamped) | divides every *duration* in the motion spec and scales the ambient clock | no — timed values keep their elapsed progress, so the change is a speed change rather than a restart |
+| `glow` | 0..1 | blur sigma / glow strength; `0` = no blur pass | no |
+| `cornerRadius` | 0..0.5·minSide | path rebuilt only when the radius actually changes | no |
 | `beamThickness` | 1..24 px | gradient cache invalidated on change | no |
-| `blurSigma` | 0..24 | backdrop only; `0` degrades `blurredFrost` → `solidDim` | no |
+| `blurSigma` | 0..24 | backdrop only; `0` degrades `blurredFrost` to a flat dim | no |
 
-`speedMultiplier` implementation detail: `duration = base / multiplier`, and if the
-controller is mid-flight we set `duration` then re-`forward()` from the current
-`value` — visually continuous.
+`speed` is deliberately **not** applied to the springs: a spring's stiffness is what
+gives the lock-on its weight, and scaling it would change the *feel* rather than the
+pace. Speeding the overlay up therefore tightens the cross-fades and the beam while
+the lock still lands with the same overshoot.
 
 ---
 
@@ -226,13 +233,33 @@ When `MediaQuery.disableAnimations == true`:
 | ambient loops (breathing/floating/shimmer/beam) | frozen at `t = 0.35`; beam drawn as a static soft bar |
 | T1 (240 ms) | 120 ms fade |
 | T2 spring morph | 120 ms `easeOutCubic` quad lerp, **no overshoot** |
+| T2 hold window (140 ms) | **still runs**, capped at `microFade` (120 ms) |
 | T3 pulse | removed |
 | T4 success (900 ms) | 200 ms `colorWash` + static check mark |
 | T5 error (620 ms) | 200 ms tint to error color, no shake/flash |
 | T6 invalid (380 ms) | 200 ms tint + message fade |
 | particles / confetti / glitch | not painted at all |
 
-State changes are still announced to screen readers.
+The cap is structural: `ScanFxMotion.effective(duration)` returns
+`min(duration, microFade)` whenever reduce-motion is set, and springs fall back to
+`reducedSpring` (a very stiff spring that settles in a few frames) rather than
+being skipped. The same code path therefore runs; only the geometry of the motion
+changes.
+
+Reduce-motion **never removes a state transition**. In particular the
+`detected → locked` hold is *not* disabled — a scanner whose state machine never
+advances is broken, not calm. It is shortened to `microFade` instead.
+
+Effects must additionally define a steady state, because the director *jumps* a
+burst to its end under reduce-motion (`_feedback.jumpTo(1)`): an effect that only
+"fades out" would be invisible. Each effect therefore has an explicit
+`steadyState(frame, peak)` it holds instead — a wash stays tinted, a glow stays
+lit, a rim stays lit.
+
+State changes are still announced to screen readers, via the `liveRegion`
+`Semantics` node whose label changes with the state (`SemanticsService.announce`
+is deprecated in favour of implicit announcements, and the implicit form is the
+only one that is correct across multiple windows).
 
 ---
 

@@ -89,6 +89,12 @@ class ScanLayerStack {
   }
 
   /// Replaces the first layer of [kind] with [layer], keeping its position.
+  ///
+  /// [layer] should report the same [ScanLayerKind] it is replacing — a lookup
+  /// through [find] is kind-based, so a replacement that claims a different kind
+  /// simply stops being found under the old one. [CustomScanLayer] takes a
+  /// `layerKind` for exactly this reason. If no layer of [kind] exists, [layer]
+  /// is appended.
   ScanLayerStack replace(ScanLayerKind kind, ScanLayer layer) {
     final list = List<ScanLayerEntry>.of(entries);
     for (var i = 0; i < list.length; i++) {

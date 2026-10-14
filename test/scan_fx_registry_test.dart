@@ -52,7 +52,8 @@ void main() {
       expect(ScanFxRegistry.success(ScanSuccessStyle.none).animated, isFalse);
       expect(ScanFxRegistry.error(ScanErrorStyle.none).animated, isFalse);
       expect(ScanFxRegistry.backdrop(ScanBackdropStyle.none).animated, isFalse);
-      expect(ScanFxRegistry.frame(ScanFrameShape.cornersOnly).animated, isFalse);
+      expect(
+          ScanFxRegistry.frame(ScanFrameShape.cornersOnly).animated, isFalse);
     });
 
     test('a stack is built back-to-front in a stable order', () {
@@ -96,12 +97,16 @@ void main() {
         order,
         stack.entries.map((e) => e.layer.kind).toList(),
       );
-      expect(hidden.show(ScanLayerKind.beam).entries.length, stack.entries.length);
+      expect(
+          hidden.show(ScanLayerKind.beam).entries.length, stack.entries.length);
     });
 
     test('replace swaps in place and appends when absent', () {
       final stack = fresh();
-      final replacement = CustomScanLayer(_NullPainter());
+      final replacement = CustomScanLayer(
+        _NullPainter(),
+        layerKind: ScanLayerKind.beam,
+      );
       final replaced = stack.replace(ScanLayerKind.beam, replacement);
       expect(replaced.find(ScanLayerKind.beam), same(replacement));
 
@@ -112,6 +117,28 @@ void main() {
         (e) => e.layer.kind == ScanLayerKind.corners,
       );
       expect(indexAfter, indexBefore);
+
+      // A `kind` that is not present is appended rather than dropped.
+      final hintReplacement = CustomScanLayer(
+        _NullPainter(),
+        layerKind: ScanLayerKind.hint,
+      );
+      final appended = stack
+          .remove(ScanLayerKind.hint)
+          .replace(ScanLayerKind.hint, hintReplacement);
+      expect(appended.find(ScanLayerKind.hint), same(hintReplacement));
+      expect(appended.entries.last.layer, same(hintReplacement));
+    });
+
+    test('replace does not move layers of other kinds', () {
+      final stack = fresh();
+      final replaced = stack.replace(
+        ScanLayerKind.corners,
+        CustomScanLayer(_NullPainter(), layerKind: ScanLayerKind.corners),
+      );
+      final before = stack.entries.map((e) => e.layer.kind).toList();
+      final after = replaced.entries.map((e) => e.layer.kind).toList();
+      expect(after, before);
     });
 
     test('remove drops the slot, insert and reorder move it', () {
@@ -128,14 +155,24 @@ void main() {
     });
 
     test('equality is structural over entries', () {
-      expect(fresh(), fresh());
-      expect(fresh() == fresh().hide(ScanLayerKind.beam), isFalse);
+      final stack = fresh();
+      // Identity holds for the same stack, which is what the widget relies on:
+      // it memoises the base stack so a rebuild compares equal and repaints
+      // nothing.
+      expect(stack, same(stack));
+      expect(stack == stack.hide(ScanLayerKind.beam), isFalse);
+      expect(stack == stack.replaceAt(0, CustomScanLayer(_NullPainter())),
+          isFalse);
+      // Two independently built stacks hold different layer instances, so they
+      // are deliberately *not* equal.
+      expect(fresh() == fresh(), isFalse);
     });
   });
 
   group('QrScanFxTheme', () {
     test('helpers resolve tunables without mutating the base theme', () {
-      const tunables = ScanFxTunables(glow: 0.1, cornerRadius: 4, intensity: 0.5);
+      const tunables =
+          ScanFxTunables(glow: 0.1, cornerRadius: 4, intensity: 0.5);
       final themed = QrScanFxTheme.dark.copyWith(tunables: tunables);
       expect(themed.resolvedGlow, 0.1);
       expect(themed.resolvedCornerRadius, 4);
@@ -146,7 +183,7 @@ void main() {
       final a = QrScanFxTheme.dark;
       final b = QrScanFxTheme.light;
       expect(a.copyWith(), a);
-      final mid = a.lerp(b, 0.5) as QrScanFxTheme;
+      final mid = a.lerp(b, 0.5);
       expect(mid.frameShape, isA<ScanFrameShape>());
       expect(a.lerp(b, 0), a);
       expect(a.lerp(b, 1), b);
@@ -206,7 +243,8 @@ void main() {
       expect(controller.value, isA<ScanFxState>());
     });
 
-    test('ScanFxTarget accepts geometry only and rejects malformed corners', () {
+    test('ScanFxTarget accepts geometry only and rejects malformed corners',
+        () {
       expect(ScanFxTarget.rect(Rect.zero).isRect, isTrue);
       expect(() => ScanFxTarget.corners(const <Offset>[]), throwsArgumentError);
       expect(

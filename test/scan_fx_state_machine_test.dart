@@ -23,7 +23,8 @@ void main() {
       // animation would never complete.
       for (var i = 0; i < 50; i++) {
         expect(machine.canFire(ScanFxTrigger.targetDetected), isFalse);
-        expect(machine.fire(ScanFxTrigger.targetDetected), ScanFxState.detected);
+        expect(
+            machine.fire(ScanFxTrigger.targetDetected), ScanFxState.detected);
       }
 
       expect(machine.fire(ScanFxTrigger.lockHoldElapsed), ScanFxState.locked);

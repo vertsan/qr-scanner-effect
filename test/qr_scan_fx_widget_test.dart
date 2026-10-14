@@ -2,16 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qr_scan_fx/qr_scan_fx.dart';
 
-/// Wraps [child] in the minimum scaffolding the overlay needs, optionally
-/// forcing reduce-motion.
-Widget _host(Widget child, {bool reduceMotion = false}) => MaterialApp(
-      home: Builder(
-        builder: (context) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion),
-          child: Align(alignment: Alignment.topLeft, child: child),
-        ),
-      ),
+Widget _host(Widget child) => MaterialApp(
+      home: Align(alignment: Alignment.topLeft, child: child),
     );
+
+/// Pumps in 60 fps steps.
+///
+/// A single large `pump` would only advance the animation by the director's
+/// stall clamp (50 ms), which is deliberate production behaviour: a frame that
+/// arrives after a debugger pause must not teleport the animation. Tests have to
+/// tick like a real device.
+Future<void> _settle(WidgetTester tester, Duration duration) async {
+  const step = Duration(milliseconds: 16);
+  var remaining = duration;
+  while (remaining > Duration.zero) {
+    final next = remaining < step ? remaining : step;
+    await tester.pump(next);
+    remaining -= next;
+  }
+}
 
 void main() {
   group('QrScanFx widget', () {
@@ -23,9 +32,7 @@ void main() {
           const SizedBox(
             width: 360,
             height: 360,
-            child: QrScanFx(
-              child: ColoredBox(color: Color(0xFF101010)),
-            ),
+            child: QrScanFx(child: ColoredBox(color: Color(0xFF101010))),
           ),
         ),
       );
@@ -68,7 +75,7 @@ void main() {
       await tester.pump();
 
       // The hold window elapses on its own and the lock settles.
-      await tester.pump(const Duration(milliseconds: 600));
+      await _settle(tester, const Duration(milliseconds: 600));
       expect(controller.value, ScanFxState.locked);
 
       controller.success();
@@ -76,19 +83,19 @@ void main() {
       expect(controller.value, ScanFxState.success);
 
       // Let the success burst play out; nothing may throw.
-      await tester.pump(const Duration(milliseconds: 1000));
+      await _settle(tester, const Duration(milliseconds: 1200));
       expect(tester.takeException(), isNull);
 
       controller.error('That code is not supported');
       await tester.pump();
       expect(controller.value, ScanFxState.error);
       expect(controller.message.value, 'That code is not supported');
-      await tester.pump(const Duration(milliseconds: 800));
+      await _settle(tester, const Duration(milliseconds: 800));
 
       controller.invalid();
       await tester.pump();
       expect(controller.value, ScanFxState.invalid);
-      await tester.pump(const Duration(milliseconds: 600));
+      await _settle(tester, const Duration(milliseconds: 600));
 
       controller.reset();
       await tester.pump();
@@ -176,7 +183,7 @@ void main() {
           ),
         ),
       );
-      await tester.pump(const Duration(milliseconds: 16));
+      await _settle(tester, const Duration(milliseconds: 100));
       expect(tester.takeException(), isNull);
 
       await tester.pumpWidget(const SizedBox.shrink());
@@ -205,15 +212,21 @@ void main() {
           ),
         ),
       );
-      await tester.pump(const Duration(milliseconds: 16));
+      await _settle(tester, const Duration(milliseconds: 100));
       expect(tester.takeException(), isNull);
 
       await tester.pumpWidget(const SizedBox.shrink());
     });
 
-    testWidgets('honours reduce-motion and keeps every state renderable', (
+    testWidgets('reduce-motion still locks, just without the spring', (
       tester,
     ) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(disableAnimations: true);
+      addTearDown(
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
+
       final controller = QrScanFxController();
       addTearDown(controller.dispose);
 
@@ -224,14 +237,14 @@ void main() {
             height: 360,
             child: QrScanFx(controller: controller),
           ),
-          reduceMotion: true,
         ),
       );
 
-      controller.lockOn(ScanFxTarget.rect(const Rect.fromLTWH(80, 80, 200, 200)));
+      controller.lockOn(
+        ScanFxTarget.rect(const Rect.fromLTWH(80, 80, 200, 200)),
+      );
       await tester.pump();
-      // Reduce-motion must still reach `locked`, just without the spring.
-      await tester.pump(const Duration(milliseconds: 600));
+      await _settle(tester, const Duration(milliseconds: 600));
       expect(controller.value, ScanFxState.locked);
 
       // Each terminal burst must render to its steady state, not to nothing:
@@ -240,21 +253,21 @@ void main() {
       controller.success();
       await tester.pump();
       expect(tester.takeException(), isNull);
-      await tester.pump(const Duration(milliseconds: 300));
+      await _settle(tester, const Duration(milliseconds: 300));
 
       controller.reset();
       await tester.pump();
       controller.error('nope');
       await tester.pump();
       expect(tester.takeException(), isNull);
-      await tester.pump(const Duration(milliseconds: 300));
+      await _settle(tester, const Duration(milliseconds: 300));
 
       controller.reset();
       await tester.pump();
       controller.invalid('wrong');
       await tester.pump();
       expect(tester.takeException(), isNull);
-      await tester.pump(const Duration(milliseconds: 300));
+      await _settle(tester, const Duration(milliseconds: 300));
 
       await tester.pumpWidget(const SizedBox.shrink());
       expect(tester.takeException(), isNull);
@@ -300,7 +313,7 @@ void main() {
       final controller = QrScanFxController();
       addTearDown(controller.dispose);
 
-      var seenStack = ScanLayerStack.of(<ScanLayer>[]);
+      ScanLayerStack? seen;
 
       await tester.pumpWidget(
         _host(
@@ -310,31 +323,34 @@ void main() {
             child: QrScanFx(
               controller: controller,
               layers: (context, stack) {
-                seenStack = stack;
-                return stack
-                    .hide(ScanLayerKind.hint)
-                    .replace(
+                seen = stack.hide(ScanLayerKind.hint).replace(
                       ScanLayerKind.reticle,
                       CustomScanLayer(
                         _NullPainter(),
                         layerKind: ScanLayerKind.reticle,
                       ),
                     );
+                return seen!;
               },
             ),
           ),
         ),
       );
 
-      expect(seenStack.entries, isNotEmpty);
+      final stack = seen!;
+      expect(stack.entries, isNotEmpty);
+      expect(stack.find(ScanLayerKind.reticle), isA<CustomScanLayer>());
       expect(
-        seenStack.find(ScanLayerKind.reticle),
-        isA<CustomScanLayer>(),
+        stack.entries
+            .firstWhere((e) => e.layer.kind == ScanLayerKind.hint)
+            .visible,
+        isFalse,
       );
-      expect(seenStack.entries.firstWhere((e) => e.layer.kind == ScanLayerKind.hint).visible, isFalse);
 
-      controller.lockOn(ScanFxTarget.rect(const Rect.fromLTWH(80, 80, 200, 200)));
-      await tester.pump(const Duration(milliseconds: 600));
+      controller.lockOn(
+        ScanFxTarget.rect(const Rect.fromLTWH(80, 80, 200, 200)),
+      );
+      await _settle(tester, const Duration(milliseconds: 600));
       expect(tester.takeException(), isNull);
 
       await tester.pumpWidget(const SizedBox.shrink());
@@ -354,17 +370,19 @@ void main() {
         ),
       );
 
-      controller.lockOn(ScanFxTarget.rect(const Rect.fromLTWH(80, 80, 200, 200)));
+      controller.lockOn(
+        ScanFxTarget.rect(const Rect.fromLTWH(80, 80, 200, 200)),
+      );
       await tester.pump();
       controller.pause();
       expect(controller.isPaused.value, isTrue);
-      await tester.pump(const Duration(milliseconds: 400));
+      await _settle(tester, const Duration(milliseconds: 400));
       // A paused overlay does not advance its timers, so the hold never elapses.
       expect(controller.value, ScanFxState.detected);
 
       controller.resume();
       expect(controller.isPaused.value, isFalse);
-      await tester.pump(const Duration(milliseconds: 600));
+      await _settle(tester, const Duration(milliseconds: 600));
       expect(controller.value, ScanFxState.locked);
 
       await tester.pumpWidget(const SizedBox.shrink());

@@ -161,8 +161,7 @@ class QrScanFx extends StatefulWidget {
   State<QrScanFx> createState() => _QrScanFxState();
 }
 
-class _QrScanFxState extends State<QrScanFx>
-    with SingleTickerProviderStateMixin {
+class _QrScanFxState extends State<QrScanFx> with TickerProviderStateMixin {
   late QrScanFxController _controller;
   bool _ownsController = false;
   bool _reporting = false;
