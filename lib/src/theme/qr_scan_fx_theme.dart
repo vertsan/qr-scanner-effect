@@ -126,7 +126,7 @@ class QrScanFxTheme extends ThemeExtension<QrScanFxTheme> {
     cornerArmFraction: 0.16,
     backdropStyle: ScanBackdropStyle.solidDim,
     beamStyle: ScanBeamStyle.softGradientBar,
-    lockStyle: ScanLockStyle.springSnap,
+    lockStyle: ScanLockStyle.smoothMorph,
     successStyle: ScanSuccessStyle.colorWash,
     errorStyle: ScanErrorStyle.fadeBlink,
     idleStyle: ScanIdleStyle.breathing,

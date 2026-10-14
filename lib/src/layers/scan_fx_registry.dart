@@ -15,12 +15,15 @@ import 'corners/rounded_corners.dart';
 import 'corners/scan_corner_layer.dart';
 import 'corners/sharp_corners.dart';
 import 'effects/error/fade_blink_effect.dart';
+import 'effects/error/glitch_effect.dart';
 import 'effects/error/red_pulse_effect.dart';
 import 'effects/error/shake_error_effect.dart';
 import 'effects/scan_effect_layer.dart';
 import 'effects/success/check_morph_effect.dart';
 import 'effects/success/color_wash_effect.dart';
+import 'effects/success/confetti_effect.dart';
 import 'effects/success/glow_flash_effect.dart';
+import 'effects/success/ripple_waves_effect.dart';
 import 'frame/circle_frame.dart';
 import 'frame/corners_only_frame.dart';
 import 'frame/rounded_square_frame.dart';
@@ -32,7 +35,10 @@ import 'idle/floating_idle.dart';
 import 'idle/scan_fx_idle_modifier.dart';
 import 'idle/shimmer_idle.dart';
 import 'idle/still_idle.dart';
-import 'reticle/lock_pulse_reticle.dart';
+import 'reticle/focus_bracket_reticle.dart';
+import 'reticle/morph_reticle.dart';
+import 'reticle/scan_reticle_layer.dart';
+import 'reticle/zoom_reticle.dart';
 import 'scan_layer.dart';
 import 'scan_layer_stack.dart';
 
@@ -80,12 +86,16 @@ abstract final class ScanFxRegistry {
       };
 
   /// The lock-on reticle for [style].
+  ///
+  /// The style picks the *focus flourish* — the thing that moves while the
+  /// spring is in flight. The confirmation ring that plays once the lock
+  /// settles is not a style: every reticle draws it, through
+  /// [ScanReticleLayer].
   static ScanLayer reticle(ScanLockStyle style) => switch (style) {
+        ScanLockStyle.springSnap => FocusBracketReticle(),
+        ScanLockStyle.smoothMorph => MorphReticle(),
+        ScanLockStyle.zoomIn => ZoomReticle(),
         ScanLockStyle.none => NoEffectLayer(ScanLayerKind.reticle),
-        ScanLockStyle.springSnap ||
-        ScanLockStyle.smoothMorph ||
-        ScanLockStyle.zoomIn =>
-          LockPulseReticle(),
       };
 
   /// The success effect for [style].
@@ -93,18 +103,23 @@ abstract final class ScanFxRegistry {
         ScanSuccessStyle.checkMorph => CheckMorphEffect(),
         ScanSuccessStyle.colorWash => ColorWashEffect(),
         ScanSuccessStyle.glowFlash => GlowFlashEffect(),
-        ScanSuccessStyle.none => NoEffectLayer(ScanLayerKind.effects),
+        ScanSuccessStyle.rippleWaves => RippleWavesEffect(),
+        ScanSuccessStyle.confetti => ConfettiEffect(),
+        ScanSuccessStyle.none => NoEffectLayer(ScanLayerKind.success),
       };
 
   /// The fault effect for [style].
   ///
   /// One layer covers both the `error` and `invalid` states: the effect is
   /// identical, only the colour differs, and the colour comes from the frame.
+  /// Styles that would be a lie on an invalid read soften themselves — see
+  /// [GlitchEffect] and [ShakeErrorEffect].
   static ScanLayer error(ScanErrorStyle style) => switch (style) {
         ScanErrorStyle.shake => ShakeErrorEffect(),
         ScanErrorStyle.redPulse => RedPulseEffect(),
         ScanErrorStyle.fadeBlink => FadeBlinkEffect(),
-        ScanErrorStyle.none => NoEffectLayer(ScanLayerKind.effects),
+        ScanErrorStyle.glitch => GlitchEffect(),
+        ScanErrorStyle.none => NoEffectLayer(ScanLayerKind.error),
       };
 
   /// The idle-motion modifier for [style].

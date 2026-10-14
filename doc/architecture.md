@@ -284,7 +284,10 @@ class CustomScanLayer extends ScanLayer {           // user injection
   `layers:` builder receives the default stack and may **reorder, hide, replace,
   or append**, e.g. `stack.replace(ScanLayerKind.beam, MyBeam())`,
   `stack.hide(ScanLayerKind.hint)`, `stack.insert(2, CustomScanLayer(...))`.
-- Default order: `backdrop → frame → corners → beam → reticle → effects → hint`.
+- Default order: `backdrop → frame → corners → beam → reticle → success → error →
+  hint`. Success and error have **separate layer kinds** rather than sharing one
+  `effects` slot, so `hide(ScanLayerKind.success)` does not also hide the fault
+  burst. `effects` remains as the generic default kind for a `CustomScanLayer`.
 - `ScanLayerPainter` is the only `CustomPainter` in the tree. It iterates the
   stack; `shouldRepaint` returns `oldDelegate.revision != revision ||
   oldDelegate.stack != stack || oldDelegate.size != size`.
@@ -295,16 +298,27 @@ Every style is an enum variant resolving to a concrete layer via a `switch`
 (single source of truth in `theme/scan_fx_style.dart` → `scan_fx_registry.dart`
 helpers). `custom(...)` variants carry a user `Path`/`CustomPainter`.
 
-| Category | Variants | Implemented in | LOC target |
-|---|---|---|---|
-| Frame shape | `roundedSquare, squircle, circle, hexagon, diamond, cornersOnly, fullBorder, dashedBorder, bracketsThin, bracketsBold, viewfinderCross, custom(Path)` | `layers/frame/<style>.dart` | ≤ 45 each |
-| Corner style | `rounded, sharp, chamfered, dot, pill, doubleLine, glowing, animatedDraw` | `layers/corners/<style>.dart` | ≤ 45 |
-| Beam | `line, softGradientBar, glowingLaser, doubleLaser, radar, gridScan, dotMatrix, waveform, pulseRings, aurora, none` | `layers/beam/<style>.dart` | ≤ 50 |
-| Backdrop | `solidDim, blurredFrost, vignette, gradientFade, animatedNoise, spotlight, none` | `layers/backdrop/<style>.dart` | ≤ 45 |
-| Lock | `springSnap, smoothMorph, zoomIn, pulseLock, bracketCollapse, ringContract, scanlineSweepOver, particleBurst, glitchLock, none` | `layers/reticle/<style>.dart` | ≤ 50 |
-| Success | `checkMorph, rippleBurst, confettiMini, glowFlash, colorWash, cornersFlash, hapticOnly, none` | `layers/effects/success/<style>.dart` | ≤ 45 |
-| Error | `shake, redPulse, crossMorph, fadeBlink, none` | `layers/effects/error/<style>.dart` | ≤ 40 |
-| Idle | `breathing, floating, shimmer, still` | `layers/idle/<style>.dart` | ≤ 35 |
+The **Shipped** column is the state of the enums today; the remaining variants are
+the Phase 4 expansion and are listed so the vocabulary is frozen before those
+styles are written.
+
+| Category | Shipped | Variants (shipped in **bold**) | Implemented in | LOC target |
+|---|---|---|---|---|
+| Frame shape | 4 | **roundedSquare, squircle, circle, cornersOnly**, hexagon, diamond, fullBorder, dashedBorder, bracketsThin, bracketsBold, viewfinderCross, custom(Path) | `layers/frame/<style>.dart` | ≤ 45 each |
+| Corner style | 3 | **rounded, sharp, dot**, chamfered, pill, doubleLine, glowing, animatedDraw | `layers/corners/<style>.dart` | ≤ 45 |
+| Beam | 3 | **line, softGradientBar, glowingLaser**, doubleLaser, radar, gridScan, dotMatrix, waveform, pulseRings, aurora, none | `layers/beam/<style>.dart` | ≤ 50 |
+| Backdrop | 5 | **solidDim, blurredFrost, vignette, gradientFade, none**, animatedNoise, spotlight | `layers/backdrop/<style>.dart` | ≤ 45 |
+| Lock | 4 | **springSnap, smoothMorph, zoomIn, none**, pulseLock, bracketCollapse, ringContract, scanlineSweepOver, particleBurst, glitchLock | `layers/reticle/<style>.dart` | ≤ 50 |
+| Success | 6 | **checkMorph, rippleWaves, confetti, glowFlash, colorWash, none**, cornersFlash, hapticOnly | `layers/effects/success/<style>.dart` | ≤ 45 |
+| Error | 5 | **shake, redPulse, fadeBlink, glitch, none**, crossMorph | `layers/effects/error/<style>.dart` | ≤ 40 |
+| Idle | 4 | **breathing, floating, shimmer, still** | `layers/idle/<style>.dart` | ≤ 35 |
+
+`rippleWaves` and `confetti` are the shipped names for the `rippleBurst` and
+`confettiMini` sketched in Phase 1. The `lock` styles ship as three *distinct
+flourishes* — the AI-focus brackets, a calm morph and a zoom — all of which share
+one confirmation ring drawn by `ScanReticleLayer`; see `doc/animation-spec.md` §4.4.
+`glitch` is the shipped `error` style, and it degrades to a calm in-place tint on
+the `invalid` state rather than displacing the geometry.
 
 `cornersOnly`/`bracketsThin`/`bracketsBold`/`fullBorder`/`dashedBorder` reuse the
 `corners` opacity channel; `frame` and `corners` are separate layers so any frame
@@ -374,7 +388,7 @@ paint inputs; `intensity` scales alpha and glow amplitude. All clamped, never nu
 
 | Rule | Implementation |
 |---|---|
-| No particles/glitch/confetti/neon | layers `particleBurst`, `glitchLock`, `confettiMini`, `animatedNoise`, `aurora`, `matrixGreen` are removed from the stack by construction, not just disabled |
+| No particles/glitch/confetti/neon | the banking theme names none of the loud styles (`success: colorWash`, `error: fadeBlink`, `lock: smoothMorph`, `beam: softGradientBar`, `backdrop: solidDim`), and a test pins those choices; the loud variants (`confetti`, `glitch`, `animatedNoise`, `aurora`) are simply never in the stack |
 | Subtle breathing frame, soft beam | `idle: breathing` @ amplitude 0.008, `beam: softGradientBar` |
 | Durations < 400 ms | `ScanFxMotion.banking()` — every transition ≤ 380 ms, springs critically damped |
 | Neutral blue/white/dark palette | `bankingBlue` / `cleanWhite` |

@@ -53,11 +53,12 @@ export 'src/layers/backdrop/scan_backdrop_layer.dart' show ScanBackdropLayer;
 export 'src/layers/beam/scan_beam_layer.dart' show ScanBeamLayer;
 export 'src/layers/corners/scan_corner_layer.dart' show ScanCornerLayer;
 export 'src/layers/effects/scan_effect_layer.dart'
-    show NoEffectLayer, ScanEffectLayer;
+    show NoEffectLayer, ScanEffectLayer, ScanFaultEffect, ScanSuccessEffect;
 export 'src/layers/frame/scan_frame_layer.dart' show ScanFrameLayer;
 export 'src/layers/hint/scan_hint_layer.dart' show ScanHintLayer, ScanHintView;
 export 'src/layers/idle/scan_fx_idle_modifier.dart'
     show ScanFxIdleModifier, ScanFxIdleTransform;
+export 'src/layers/reticle/scan_reticle_layer.dart' show ScanReticleLayer;
 export 'src/layers/scan_fx_registry.dart' show ScanFxRegistry;
 export 'src/layers/scan_layer.dart' show CustomScanLayer, ScanLayer;
 export 'src/layers/scan_layer_stack.dart' show ScanLayerEntry, ScanLayerStack;

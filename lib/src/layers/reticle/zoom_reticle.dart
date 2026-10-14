@@ -26,9 +26,8 @@ class ZoomReticle extends ScanReticleLayer {
     if (!frame.hasTarget) return;
 
     final progress = frame.focusRaw.clamp(0.0, 1.5);
-    final alpha = focusEnvelope(progress, rise: 0.22, fall: 0.4) *
-        peak *
-        frame.intensity;
+    final alpha =
+        focusEnvelope(progress, rise: 0.22, fall: 0.4) * peak * frame.intensity;
     if (alpha <= 0.004) return;
 
     final scale = startScale + (1 - startScale) * progress;

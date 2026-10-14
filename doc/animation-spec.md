@@ -103,9 +103,9 @@ convergence. With `autoLock: false`, `detected` holds indefinitely.
 | `checkMorph` | 0 ms | 420 ms | `easeOutCubic` | path morph ✓; stroke via `PathMetric.trim` 0→1, 380 ms `easeInOutSine` |
 | `glowFlash` | 0 ms | 400 ms | `easeOutQuint` | glow 0.7 → 1.5 → 0.5 (peak at t=0.22) |
 | `cornersFlash` | 0 ms | 300 ms ×2 | `easeInOutSine` | corners alpha 1→0.15→1 twice |
-| `colorWash` | 60 ms | 520 ms | `easeInOutCubic` | success color alpha 0→0.35→0 |
-| `rippleBurst` | 80 ms | 620 ms | `easeOutQuart` | 2 waves, stagger 160 ms, start r = 0.35·minSide |
-| `confettiMini` | 120 ms | 900 ms | gravity + `easeOutCubic` | 12 pieces, 1.6× frame size spread, rotation ±540° |
+| `colorWash` | 60 ms | 520 ms | `easeInOutCubic` | success color alpha 0→0.32→0 ✅ |
+| `rippleWaves` | 0 ms | 620 ms | `easeOutCubic` | ✅ `ScanSuccessOptions.rippleWaves` rings (default 3). Each ring lives `0.68` of the burst and launches are spread evenly over the remaining `0.32` (`step = 0.32 / (n − 1)`), so the **last ring always dies exactly as the burst ends** — a fixed stagger would leave a ring on screen after the success state had moved on. Scale 1 → 1.5, alpha `(1 − t)² · 0.5` |
+| `confetti` | 0 ms | 900 ms | ballistic | ✅ `ScanSuccessOptions.particleCount` pieces (default 22, table capacity 48). Each particle has its own `0..0.16` launch delay and lives `0.82` of the burst; alpha `1 − t³`; `g = 1.05·minSide` per unit of particle time. Position, size, rotation and the paper flip are **canvas transforms around one shared unit square**, so the style allocates nothing while it runs |
 
 Total timeline 900 ms, then the final visual (tinted frame + check) **holds** until
 `reset()`.
@@ -117,6 +117,7 @@ Total timeline 900 ms, then the final visual (tinted frame + check) **holds** un
 | `shake` | 0 ms | 420 ms | damped sine, f=14 Hz, ζ=0.28 | x offset amplitude 10 px, y 0 |
 | `redPulse` | 0 ms | 600 ms | `easeInOutSine` | 2 pulses, frame tint → error color @ 0.45 |
 | `fadeBlink` | 0 ms | 240 ms ×2 | `easeInOutSine` | frame alpha 1→0.4→1 |
+| `glitch` | 0 ms | 620 ms | stepped | ✅ 12 held steps over a fixed displacement table (`6/0 / 0/−3 / −4/0 / 0/+4 / 3/2` px, scaled by `shakeAmplitude / 10`) with two dropout windows (`0.16..0.22`, `0.44..0.50`). A **held step** reads as a fault; a smooth slide would read as an animation. On `invalid` the displacements are dropped and only the tint remains |
 | `crossMorph` | 60 ms | 360 ms | `easeOutCubic` | ✕ stroke draw-in (`PathMetric`, 340 ms) |
 
 ### 4.3 `* → invalid` (T6, banking-grade calm)
@@ -129,6 +130,46 @@ Total timeline 900 ms, then the final visual (tinted frame + check) **holds** un
 
 Banking rule: never shake, never flash red-on-white, never exceed 400 ms.
 
+### 4.4 Lock-on flourishes (T2/T3) — the "AI focus"
+
+The lock-on is split in two, so a theme can change the *feel* without changing
+the *confirmation*:
+
+| Part | Owned by | Behaviour |
+|---|---|---|
+| **focus flourish** | `ScanLockStyle` | the shape that moves while the spring is in flight |
+| **confirmation ring** | `ScanReticleLayer` (always) | the single expanding ring fired once the spring settles (P1) |
+
+Because the ring is drawn by the shared base rather than by each style, the
+`pulseStrength` knob turns it off in one place and no style can forget it.
+
+| `ScanLockStyle` | Flourish | Reads | Spring |
+|---|---|---|---|
+| `springSnap` | `FocusBracketReticle` | `focusRaw` | S1 |
+| `smoothMorph` | `MorphReticle` | `focus` | S2 (critically damped) |
+| `zoomIn` | `ZoomReticle` | `focusRaw` | S4 |
+| `none` | — | — | — |
+
+**`FocusBracketReticle` — the signature effect.** Four brackets start
+`0.16 · minSide` *outside* the minimum quad and travel inwards, landing exactly on
+the corner layer's brackets (same arm length, same stroke width) and dissolving
+in the last `0.14` of the travel. Two consequences fall out of that design:
+
+* the two bracket families are **never on screen together** — the reticle is the
+  focus animation, not extra chrome, and it is silent at `focus = 1`;
+* the hand-off is invisible, because the last frame of the flourish is
+  pixel-compatible with the first frame of the corner layer.
+
+The flourish is gated on `ScanFxFrame.hasTarget`, so it only exists while a target
+is actually being acquired. Because the brackets are placed from the *live*
+`ScanFxFrame.quad` — which the director already morphs from the default area onto
+the target — rotation, perspective and scale are handled with no per-style code.
+
+**Why the flourish fades to nothing at `focus = 1`.** `test/scan_fx_focus_test.dart`
+rasterises each flourish and counts inked pixels, asserting `0` once the lock has
+landed. That test is the guard that keeps a future style from quietly stacking a
+second set of brackets on the corner layer.
+
 ---
 
 ## 5. Spring values
@@ -137,7 +178,7 @@ Flutter `SpringDescription(mass, stiffness, damping)`; `ζ = damping / (2·√(k
 
 | ID | Name | mass | stiffness `k` | damping `c` | ζ | Settle | Overshoot | Used by |
 |---|---|---|---|---|---|---|---|---|
-| **S1** | `reticleLock` | 1 | 180 | 19.32 | 0.72 | ~480 ms | ≈ 4 % | T2 `springSnap` ✅ |
+| **S1** | `reticleLock` | 1 | 180 | 19.32 | 0.72 | ~480 ms | ≈ 4 % | T2 `springSnap` ✅ (`FocusBracketReticle`) |
 | S2 | `reticleLockCalm` | 1 | 220 | 29.66 | 1.00 | ~340 ms | 0 % | banking lock, `minimalBank`, `lock.smoothMorph` ✅ |
 | S3 | `successSnap` | 1 | 240 | 22.00 | 0.71 | ~380 ms | ≈ 4.5 % | success frame settle — *planned* |
 | S4 | `zoomIn` | 1 | 200 | 16.97 | 0.60 | ~420 ms | ≈ 9 % | `lock.zoomIn` scale ✅ |
@@ -163,9 +204,9 @@ Non-spring motions:
 
 | ID | Name | Shape |
 |---|---|---|
-| N1 | `errorShake` | `A·e^(−t/τ)·sin(2π·f·t)`, A=10 px, τ=120 ms, f=14 Hz, 420 ms |
-| N2 | `confetti` | linear velocity + `g = 1400 px/s²`, landing at t=0.45 of the burst |
-| N3 | `glitchJump` | 3 stepped offsets (6/0/−4 px) with 40 ms holds + 2 alpha dropouts |
+| N1 | `errorShake` | ✅ `A·e^(−t/τ)·sin(2π·f·t)`, A=10 px, τ=120 ms, f=14 Hz, 420 ms. Applied to the quad by the director, and **only** for `ScanErrorStyle.shake`; the other fault styles are pure overlays |
+| N2 | `confetti` | ✅ ballistic, `g = 1.05·minSide` per unit of particle time, per-particle delay `0..0.16`, life `0.82`, alpha `1 − t³`, plus a `cos` paper flip |
+| N3 | `glitchJump` | ✅ stepped offsets (`6/0 / 0/−3 / −4/0 / 0/+4 / 3/2` px) with held jumps and 2 alpha dropouts; the displacement table is scaled by `shakeAmplitude / 10` |
 
 **P1 — lock pulse:** an expanding ring from the locked quad — r 0.5·minSide →
 1.15·minSide, alpha 0.60 → 0 — driven by the director's single `pulse` value, a
@@ -251,7 +292,14 @@ When `MediaQuery.disableAnimations == true`:
 | T4 success (900 ms) | 200 ms `colorWash` + static check mark |
 | T5 error (620 ms) | 200 ms tint to error color, no shake/flash |
 | T6 invalid (380 ms) | 200 ms tint + message fade |
-| particles / confetti / glitch | not painted at all |
+| `FocusBracketReticle` / `ZoomReticle` | flourish frozen at its landed state → **nothing drawn** (both are silent at `focus = 1`) |
+| `confetti` | held as a static scatter at `t = 0.45`, alpha `0.5` |
+| `glitch` | held as a steady in-place tint (no jumps, no dropouts) |
+| `rippleWaves` | one settled ring at `1 + 0.4·expansion`, alpha `steadyState` |
+
+An effect must never be *removed* by reduce-motion, only calmed: a burst effect
+that exists purely as motion has to pick a steady state it can hold instead. That
+is what the third column above records.
 
 The cap is structural: `ScanFxMotion.effective(duration)` returns
 `min(duration, microFade)` whenever reduce-motion is set, and springs fall back to
@@ -281,10 +329,10 @@ only one that is correct across multiple windows).
 | Recipe | Idle | Lock (spring) | Beam | Success | Feel |
 |---|---|---|---|---|---|
 | `appleVision` | breathing | S1 + pulseLock | softGradientBar | glowFlash + checkMorph | clean, dimensioned, calm |
-| `cyberpunk` | shimmer | S1 + glitchLock | glowingLaser | confettiMini | loud, fast, neon |
+| `cyberpunk` | shimmer | S1 + glitchLock | glowingLaser | confetti | loud, fast, neon |
 | `minimalBank` | breathing (0.008) | S2 (critical) | softGradientBar | colorWash | quiet, trustworthy |
 | `retroLaser` | still | S1 + scanlineSweepOver | doubleLaser | cornersFlash | CRT / arcade |
-| `playfulPop` | floating | S3 + pulseLock | pulseRings | rippleBurst | soft, bouncy, toy-like |
+| `playfulPop` | floating | S3 + pulseLock | pulseRings | rippleWaves | soft, bouncy, toy-like |
 
 `banking` (not a recipe but a mode) = `minimalBank` motion + hard caps from §4 and
 the layer restrictions in architecture §9.

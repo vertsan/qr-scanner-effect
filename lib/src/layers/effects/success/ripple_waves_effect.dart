@@ -18,10 +18,12 @@ class RippleWavesEffect extends ScanSuccessEffect {
   /// Creates the style.
   RippleWavesEffect();
 
-  /// Fraction of the burst between the launch of one wave and the next.
-  static const double _stagger = 0.2;
-
   /// Fraction of the burst a single wave lives for.
+  ///
+  /// Launches are then spread evenly across the remaining time, so the last wave
+  /// always finishes exactly as the burst does. Sizing the spacing from the wave
+  /// count is what keeps a theme with four or five waves from leaving a ring on
+  /// screen after the success state has moved on.
   static const double _life = 0.68;
 
   /// How far past the frame the last wave reaches, as a fraction of its size.
@@ -61,11 +63,12 @@ class RippleWavesEffect extends ScanSuccessEffect {
     final waves = frame.theme.success.rippleWaves;
     if (waves <= 0) return;
 
+    final step = waves > 1 ? (1 - _life) / (waves - 1) : 0.0;
     for (var i = 0; i < waves; i++) {
       // Computed directly rather than through [ScanFxFrame.local] so a wave that
       // has not launched yet is skipped instead of sitting on the frame edge at
       // full opacity.
-      final t = (burst - i * _stagger) / _life;
+      final t = (burst - i * step) / _life;
       if (t <= 0 || t >= 1) continue;
 
       final eased = Curves.easeOutCubic.transform(t);
@@ -78,7 +81,7 @@ class RippleWavesEffect extends ScanSuccessEffect {
         center,
         1 + _expansion * eased,
         width,
-        sigma * (1 - eased * 0.6),
+        sigma,
         ScanFxPalette.fade(frame.stateColor, alpha),
       );
     }
@@ -89,6 +92,11 @@ class RippleWavesEffect extends ScanSuccessEffect {
   /// The stroke is pre-divided by [scale] so the canvas transform leaves the
   /// on-screen width constant — a wave that thickened as it grew would read as
   /// the frame inflating rather than as a ring travelling away from it.
+  ///
+  /// All waves in a frame share one [sigma] on purpose: [ScanPaintCache] rebuilds
+  /// its `MaskFilter` whenever the sigma changes, so fading the bloom per wave
+  /// would allocate a blur filter per wave per frame. The waves differentiate
+  /// themselves by alpha and radius instead.
   void _wave(
     Canvas canvas,
     Path path,

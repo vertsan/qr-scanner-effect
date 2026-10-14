@@ -389,8 +389,7 @@ class ScanSuccessOptions {
       other.particleCount == particleCount;
 
   @override
-  int get hashCode =>
-      Object.hash(checkStrokeWidth, rippleWaves, particleCount);
+  int get hashCode => Object.hash(checkStrokeWidth, rippleWaves, particleCount);
 }
 
 /// Tunables for the error effect.

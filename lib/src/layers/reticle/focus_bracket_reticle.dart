@@ -51,17 +51,18 @@ class FocusBracketReticle extends ScanReticleLayer {
     // corners and dissolve in the last stretch. Holding full opacity until the
     // brackets are nearly on the corners is what makes the hand-off to the
     // corner layer read as a landing rather than as a cross-fade.
-    final alpha = focusEnvelope(settle, rise: 0.2, fall: 0.14) * frame.intensity;
+    final alpha =
+        focusEnvelope(settle, rise: 0.2, fall: 0.14) * frame.intensity;
     if (alpha <= 0.004) return;
 
     final landed = settle.clamp(0.0, 1.0);
     final side = frame.quad.shortestSide;
-    final arm = side * frame.theme.cornerArmFraction * (1 + armTravel * (1 - landed));
+    final arm =
+        side * frame.theme.cornerArmFraction * (1 + armTravel * (1 - landed));
     final inset = -(1 - settle) * startSpread * side;
 
     final path = _bracketPath(frame.quad, arm, inset);
-    final width =
-        frame.theme.cornerStrokeWidth * (0.7 + 0.3 * landed);
+    final width = frame.theme.cornerStrokeWidth * (0.7 + 0.3 * landed);
     ScanGlow.strokePath(
       canvas,
       path,

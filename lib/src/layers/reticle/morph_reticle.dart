@@ -27,8 +27,9 @@ class MorphReticle extends ScanReticleLayer {
 
     // [ScanFxFrame.focus] is clamped, so a theme whose spring overshoots still
     // gets a monotonic fade here — the overshoot belongs to the bracket style.
-    final alpha =
-        focusEnvelope(frame.focus, rise: 0.3, fall: 0.35) * peak * frame.intensity;
+    final alpha = focusEnvelope(frame.focus, rise: 0.3, fall: 0.35) *
+        peak *
+        frame.intensity;
     if (alpha <= 0.004) return;
 
     final width = frame.theme.cornerStrokeWidth * (1 + 0.5 * (1 - frame.focus));

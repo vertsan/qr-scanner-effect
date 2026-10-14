@@ -33,10 +33,10 @@ void main() {
         expect(ScanFxRegistry.reticle(style).kind, ScanLayerKind.reticle);
       }
       for (final style in ScanSuccessStyle.values) {
-        expect(ScanFxRegistry.success(style).kind, ScanLayerKind.effects);
+        expect(ScanFxRegistry.success(style).kind, ScanLayerKind.success);
       }
       for (final style in ScanErrorStyle.values) {
-        expect(ScanFxRegistry.error(style).kind, ScanLayerKind.effects);
+        expect(ScanFxRegistry.error(style).kind, ScanLayerKind.error);
       }
       for (final style in ScanIdleStyle.values) {
         expect(
@@ -67,10 +67,50 @@ void main() {
         ScanLayerKind.corners,
         ScanLayerKind.beam,
         ScanLayerKind.reticle,
-        ScanLayerKind.effects, // success
-        ScanLayerKind.effects, // error
+        ScanLayerKind.success,
+        ScanLayerKind.error,
         ScanLayerKind.hint,
       ]);
+    });
+
+    test('the burst slots can be hidden independently', () {
+      final stack = ScanFxRegistry.buildStack(QrScanFxTheme.dark);
+
+      // The reason success and error have their own kinds: hiding one must not
+      // touch the other.
+      final onlyError = stack.hide(ScanLayerKind.success);
+      expect(onlyError.find(ScanLayerKind.success), isNotNull);
+      expect(onlyError.find(ScanLayerKind.error), isNotNull);
+      expect(
+        onlyError.entries
+            .firstWhere((e) => e.layer.kind == ScanLayerKind.success)
+            .visible,
+        isFalse,
+      );
+      expect(
+        onlyError.entries
+            .firstWhere((e) => e.layer.kind == ScanLayerKind.error)
+            .visible,
+        isTrue,
+      );
+    });
+
+    test('each lock style maps to its own reticle flourish', () {
+      // Every flourish shares the base, so the pulse ring and reveal fade are
+      // common; the subclasses are what make `lockStyle` a real knob rather than
+      // a synonym.
+      final types = <Type>{};
+      for (final style in ScanLockStyle.values) {
+        final layer = ScanFxRegistry.reticle(style);
+        expect(layer.kind, ScanLayerKind.reticle, reason: '$style');
+        if (style == ScanLockStyle.none) {
+          expect(layer, isA<NoEffectLayer>(), reason: '$style');
+        } else {
+          expect(layer, isA<ScanReticleLayer>(), reason: '$style');
+          types.add(layer.runtimeType);
+        }
+      }
+      expect(types.length, ScanLockStyle.values.length - 1);
     });
 
     test('every preset builds a stack with a hint overlay', () {
@@ -207,6 +247,18 @@ void main() {
       expect(banking.motion.reduceMotion, isFalse);
       expect(banking.motion.success.inMilliseconds, lessThanOrEqualTo(400));
       expect(banking.motion.hint.inMilliseconds, lessThanOrEqualTo(400));
+    });
+
+    test('bankingBlue avoids every loud style', () {
+      // The fintech promise is structural: a host cannot get confetti, a glitch
+      // or flying focus brackets out of the banking theme, because the theme
+      // does not name them.
+      final banking = QrScanFxTheme.bankingBlue;
+      expect(banking.successStyle, ScanSuccessStyle.colorWash);
+      expect(banking.errorStyle, ScanErrorStyle.fadeBlink);
+      expect(banking.lockStyle, ScanLockStyle.smoothMorph);
+      expect(banking.beamStyle, ScanBeamStyle.softGradientBar);
+      expect(banking.backdropStyle, ScanBackdropStyle.solidDim);
     });
 
     test('the banking palette keeps state colours apart from the backdrop', () {
