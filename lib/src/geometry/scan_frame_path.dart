@@ -33,7 +33,8 @@ abstract final class ScanFramePath {
             quad.bounds,
             exponent: exponent,
           ),
-        ScanFrameShape.hexagon || ScanFrameShape.diamond =>
+        ScanFrameShape.hexagon ||
+        ScanFrameShape.diamond =>
           ScanFxShapes.quadPolygon(quad, unitPolygon(shape)),
         ScanFrameShape.fullBorder => ScanFxShapes.sharpQuad(quad),
         ScanFrameShape.roundedSquare ||

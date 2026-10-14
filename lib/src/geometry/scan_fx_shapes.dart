@@ -149,7 +149,9 @@ class ScanFxShapes {
       quad.topLeft +
       (quad.topRight - quad.topLeft) * u +
       (quad.bottomLeft - quad.topLeft) * v +
-      (quad.topLeft - quad.topRight - quad.bottomLeft + quad.bottomRight) * u * v;
+      (quad.topLeft - quad.topRight - quad.bottomLeft + quad.bottomRight) *
+          u *
+          v;
 
   /// A closed polygon whose vertices are [unitPoints] mapped onto [quad].
   ///

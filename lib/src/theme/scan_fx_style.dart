@@ -477,6 +477,7 @@ class ScanErrorOptions {
   const ScanErrorOptions({
     this.shakeAmplitude = 10,
     this.pulseCount = 2,
+    this.crossStrokeWidth = 6,
   });
 
   /// Peak horizontal displacement of the shake, in logical pixels.
@@ -485,11 +486,19 @@ class ScanErrorOptions {
   /// How many colour pulses the effect plays.
   final int pulseCount;
 
+  /// Stroke width of the cross drawn by [ScanErrorStyle.crossMorph].
+  final double crossStrokeWidth;
+
   /// Copy with overrides.
-  ScanErrorOptions copyWith({double? shakeAmplitude, int? pulseCount}) =>
+  ScanErrorOptions copyWith({
+    double? shakeAmplitude,
+    int? pulseCount,
+    double? crossStrokeWidth,
+  }) =>
       ScanErrorOptions(
         shakeAmplitude: shakeAmplitude ?? this.shakeAmplitude,
         pulseCount: pulseCount ?? this.pulseCount,
+        crossStrokeWidth: crossStrokeWidth ?? this.crossStrokeWidth,
       );
 
   /// Interpolates between two option sets.
@@ -501,16 +510,18 @@ class ScanErrorOptions {
       ScanErrorOptions(
         shakeAmplitude: _lerp(a.shakeAmplitude, b.shakeAmplitude, t),
         pulseCount: t < 0.5 ? a.pulseCount : b.pulseCount,
+        crossStrokeWidth: _lerp(a.crossStrokeWidth, b.crossStrokeWidth, t),
       );
 
   @override
   bool operator ==(Object other) =>
       other is ScanErrorOptions &&
       other.shakeAmplitude == shakeAmplitude &&
-      other.pulseCount == pulseCount;
+      other.pulseCount == pulseCount &&
+      other.crossStrokeWidth == crossStrokeWidth;
 
   @override
-  int get hashCode => Object.hash(shakeAmplitude, pulseCount);
+  int get hashCode => Object.hash(shakeAmplitude, pulseCount, crossStrokeWidth);
 }
 
 /// Tunables for the backdrop layer.

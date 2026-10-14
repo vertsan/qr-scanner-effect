@@ -273,14 +273,22 @@ class QrScanFxTheme extends ThemeExtension<QrScanFxTheme> {
           isDark ? Colors.white : accent, hintBackground),
       glowStrength: isDark ? 0.6 : 0.3,
       cornerRadius: 20 + random.nextDouble() * 24,
-      frameShape: ScanFrameShape.values[random.nextInt(4)],
-      cornerStyle: ScanCornerStyle.values[random.nextInt(3)],
-      backdropStyle: ScanBackdropStyle.values[random.nextInt(4)],
-      beamStyle: ScanBeamStyle.values[random.nextInt(3)],
-      lockStyle: ScanLockStyle.values[random.nextInt(3)],
-      successStyle: ScanSuccessStyle.values[random.nextInt(3)],
-      errorStyle: ScanErrorStyle.values[random.nextInt(3)],
-      idleStyle: ScanIdleStyle.values[random.nextInt(3)],
+      frameShape:
+          ScanFrameShape.values[random.nextInt(ScanFrameShape.values.length)],
+      cornerStyle:
+          ScanCornerStyle.values[random.nextInt(ScanCornerStyle.values.length)],
+      backdropStyle: ScanBackdropStyle
+          .values[random.nextInt(ScanBackdropStyle.values.length)],
+      beamStyle:
+          ScanBeamStyle.values[random.nextInt(ScanBeamStyle.values.length)],
+      lockStyle:
+          ScanLockStyle.values[random.nextInt(ScanLockStyle.values.length)],
+      successStyle: ScanSuccessStyle
+          .values[random.nextInt(ScanSuccessStyle.values.length)],
+      errorStyle:
+          ScanErrorStyle.values[random.nextInt(ScanErrorStyle.values.length)],
+      idleStyle:
+          ScanIdleStyle.values[random.nextInt(ScanIdleStyle.values.length)],
     );
   }
 
@@ -426,7 +434,15 @@ class QrScanFxTheme extends ThemeExtension<QrScanFxTheme> {
       : switch (lockStyle) {
           ScanLockStyle.smoothMorph => motion.calmLockSpring,
           ScanLockStyle.zoomIn => motion.zoomSpring,
-          ScanLockStyle.springSnap || ScanLockStyle.none => motion.lockSpring,
+          ScanLockStyle.ringContract => motion.ringSpring,
+          ScanLockStyle.pulseLock ||
+          ScanLockStyle.particleBurst =>
+            motion.snapSpring,
+          ScanLockStyle.glitchLock => motion.glitchSpring,
+          ScanLockStyle.scanlineSweepOver ||
+          ScanLockStyle.springSnap ||
+          ScanLockStyle.none =>
+            motion.lockSpring,
         };
 
   /// Returns a copy with the frame composited over [overlay].

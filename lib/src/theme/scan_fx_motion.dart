@@ -46,6 +46,21 @@ class ScanFxMotion {
       stiffness: 200,
       damping: 16.97,
     ),
+    this.snapSpring = const SpringDescription(
+      mass: 1,
+      stiffness: 320,
+      damping: 30,
+    ),
+    this.ringSpring = const SpringDescription(
+      mass: 1,
+      stiffness: 260,
+      damping: 25.8,
+    ),
+    this.glitchSpring = const SpringDescription(
+      mass: 1,
+      stiffness: 420,
+      damping: 21,
+    ),
     this.reducedSpring = const SpringDescription(
       mass: 1,
       stiffness: 2600,
@@ -128,6 +143,19 @@ class ScanFxMotion {
   /// Spring used by [ScanLockStyle.zoomIn].
   final SpringDescription zoomSpring;
 
+  /// A near-critically damped snap used by [ScanLockStyle.pulseLock] and
+  /// [ScanLockStyle.particleBurst]: the geometry arrives quickly and cleanly,
+  /// because the flourish carries the personality rather than the overshoot.
+  final SpringDescription snapSpring;
+
+  /// A softly damped spring used by [ScanLockStyle.ringContract]: the ring
+  /// closes in and settles without a visible bounce.
+  final SpringDescription ringSpring;
+
+  /// A bouncy, under-damped spring used by [ScanLockStyle.glitchLock], whose
+  /// whole idea is that the frame snaps into place.
+  final SpringDescription glitchSpring;
+
   /// A very stiff spring that settles in a few frames, used when
   /// [reduceMotion] is set so the same code path still runs.
   final SpringDescription reducedSpring;
@@ -185,6 +213,9 @@ class ScanFxMotion {
       calmLockSpring: calmLockSpring,
       resetSpring: resetSpring,
       zoomSpring: zoomSpring,
+      snapSpring: snapSpring,
+      ringSpring: ringSpring,
+      glitchSpring: glitchSpring,
       reducedSpring: reducedSpring,
       reduceMotion: reduceMotion,
       shakeCycles: shakeCycles,
@@ -212,6 +243,9 @@ class ScanFxMotion {
       other.calmLockSpring == calmLockSpring &&
       other.resetSpring == resetSpring &&
       other.zoomSpring == zoomSpring &&
+      other.snapSpring == snapSpring &&
+      other.ringSpring == ringSpring &&
+      other.glitchSpring == glitchSpring &&
       other.reducedSpring == reducedSpring &&
       other.reduceMotion == reduceMotion &&
       other.shakeCycles == shakeCycles &&
@@ -236,6 +270,9 @@ class ScanFxMotion {
         calmLockSpring,
         resetSpring,
         zoomSpring,
+        snapSpring,
+        ringSpring,
+        glitchSpring,
         reducedSpring,
         reduceMotion,
         shakeCycles,

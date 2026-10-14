@@ -32,6 +32,7 @@ ScanFxFrame _frame({
       size: _size,
       state: state,
       theme: theme,
+      frameShape: theme.frameShape,
       ambientSeconds: 0,
       focus: focus,
       focusRaw: focusRaw ?? focus,

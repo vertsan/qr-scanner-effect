@@ -48,6 +48,30 @@ abstract final class ScanGlow {
     canvas.drawPath(path, cache.stroke);
   }
 
+  /// Strokes a line with an optional bloom.
+  static void line(
+    Canvas canvas,
+    Offset from,
+    Offset to,
+    Color color,
+    double width,
+    double sigma,
+    ScanPaintCache cache,
+  ) {
+    if (color.a <= 0) return;
+    if (sigma > 0) {
+      cache.applyGlowBlur(sigma);
+      cache.glow
+        ..color = color
+        ..strokeWidth = width * 1.4;
+      canvas.drawLine(from, to, cache.glow);
+    }
+    cache.stroke
+      ..color = color
+      ..strokeWidth = width;
+    canvas.drawLine(from, to, cache.stroke);
+  }
+
   /// Fills a circle with an optional bloom.
   static void circle(
     Canvas canvas,
