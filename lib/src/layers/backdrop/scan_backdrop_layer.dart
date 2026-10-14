@@ -1,8 +1,8 @@
 import 'dart:ui' show Offset, Path, PathFillType, Size;
 
 import '../../animation/scan_fx_frame.dart';
+import '../../geometry/scan_frame_path.dart';
 import '../../geometry/scan_fx_quad.dart';
-import '../../geometry/scan_fx_shapes.dart';
 import '../../theme/scan_fx_style.dart';
 import '../scan_layer.dart';
 
@@ -10,7 +10,7 @@ import '../scan_layer.dart';
 ///
 /// Every backdrop style needs the same thing: a path describing "the overlay,
 /// minus the scan area". Building it once, with an even-odd fill rule (which
-/// punches the hole without `Path.combine`), keeps all six backdrop styles to a
+/// punches the hole without `Path.combine`), keeps every backdrop style to a
 /// handful of lines each.
 ///
 /// The path is cached and rebuilt only when the quad, radius, shape or size
@@ -43,7 +43,7 @@ abstract class ScanBackdropLayer extends ScanLayer {
   }) {
     final quad = frame.quad;
     final radius = frame.cornerRadius;
-    final shape = frame.theme.frameShape;
+    final shape = frame.frameShape;
     final exponent = frame.theme.squircleExponent;
     if (_path != null &&
         _pathQuad == quad &&
@@ -58,26 +58,15 @@ abstract class ScanBackdropLayer extends ScanLayer {
 
     final path = Path()..fillType = PathFillType.evenOdd;
     path.addRect(frame.overlay.inflate(outerInflate));
-
-    switch (shape) {
-      case ScanFrameShape.circle:
-        path.addOval(quad.bounds.inflate(innerInflate));
-      case ScanFrameShape.squircle:
-        path.addPolygon(
-          ScanFxShapes.superellipsePoints(
-            quad.bounds.inflate(innerInflate),
-            exponent: exponent,
-          ),
-          true,
-        );
-      case ScanFrameShape.roundedSquare:
-      case ScanFrameShape.cornersOnly:
-        final rounded = ScanFxShapes.roundedQuad(
-          innerInflate == 0 ? quad : quad.inflateAlongNormals(innerInflate),
-          radius,
-        );
-        path.addPath(rounded, Offset.zero);
-    }
+    path.addPath(
+      ScanFramePath.of(
+        innerInflate == 0 ? quad : quad.inflateAlongNormals(innerInflate),
+        shape,
+        radius,
+        exponent: exponent,
+      ),
+      Offset.zero,
+    );
 
     _path = path;
     _pathQuad = quad;

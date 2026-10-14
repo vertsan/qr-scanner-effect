@@ -1,6 +1,7 @@
 import 'dart:ui' show Path;
 
 import '../../animation/scan_fx_frame.dart';
+import '../../geometry/scan_frame_path.dart';
 import '../../geometry/scan_fx_quad.dart';
 import '../../geometry/scan_fx_shapes.dart';
 import '../../theme/scan_fx_style.dart';
@@ -37,7 +38,7 @@ class ScanQuadPathCache {
       _radius != frame.cornerRadius ||
       _exponent != frame.theme.squircleExponent ||
       _scale != scale ||
-      _shape != frame.theme.frameShape;
+      _shape != frame.frameShape;
 
   void _store(ScanFxFrame frame, Path value, double radius, double scale) {
     path = value;
@@ -45,7 +46,7 @@ class ScanQuadPathCache {
     _radius = radius;
     _exponent = frame.theme.squircleExponent;
     _scale = scale;
-    _shape = frame.theme.frameShape;
+    _shape = frame.frameShape;
   }
 
   /// Invalidates the cache.
@@ -58,25 +59,21 @@ class ScanQuadPathCache {
     _shape = null;
   }
 
-  /// The outline of the scan area, matching [ScanFrameShape].
+  /// The outline of the scan area, matching [ScanFxFrame.frameShape].
   ///
   /// Effects that should read as "the frame is reacting" all use this, which is
-  /// why a `circle` theme gets circular washes and a `squircle` theme gets
-  /// continuous-corner ones without a line of per-style code.
+  /// why a `circle` theme gets circular washes and a `hexagon` theme gets
+  /// hexagonal ones without a line of per-style code.
   Path outline(ScanFxFrame frame) {
     if (stale(frame)) {
       _store(
         frame,
-        switch (frame.theme.frameShape) {
-          ScanFrameShape.circle => ScanFxShapes.oval(frame.quad.bounds),
-          ScanFrameShape.squircle => ScanFxShapes.superellipse(
-              frame.quad.bounds,
-              exponent: frame.theme.squircleExponent,
-            ),
-          ScanFrameShape.roundedSquare ||
-          ScanFrameShape.cornersOnly =>
-            ScanFxShapes.roundedQuad(frame.quad, frame.cornerRadius),
-        },
+        ScanFramePath.of(
+          frame.quad,
+          frame.frameShape,
+          frame.cornerRadius,
+          exponent: frame.theme.squircleExponent,
+        ),
         frame.cornerRadius,
         1,
       );
