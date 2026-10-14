@@ -325,6 +325,12 @@ class _QrScanFxState extends State<QrScanFx>
     if (state == _lastReportedState) return;
     _lastReportedState = state;
     widget.onStateChanged?.call(state);
+    // The geometry animates through the painter, which the director drives
+    // without touching the widget tree. Only the *state* has widget-level
+    // consequences — the semantics label (which is what announces the state) and
+    // the hint overlay — so only the state triggers a rebuild. That happens a
+    // handful of times per scan, never per frame.
+    if (mounted) setState(() {});
   }
 
   // ---------------------------------------------------------------------------
