@@ -21,7 +21,7 @@ import 'scan_backdrop_layer.dart';
 /// [SolidDimBackdrop], which is the default.
 class BlurredFrostBackdrop extends ScanBackdropLayer {
   /// Creates the style.
-  const BlurredFrostBackdrop();
+  BlurredFrostBackdrop();
 
   late final ScanPaintCache _cache = ScanPaintCache();
 

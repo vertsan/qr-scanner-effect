@@ -21,7 +21,7 @@ import '../scan_layer.dart';
 /// frame's own echo rather than as an unrelated circle.
 class LockPulseReticle extends ScanLayer {
   /// Creates the style.
-  const LockPulseReticle();
+  LockPulseReticle();
 
   @override
   ScanLayerKind get kind => ScanLayerKind.reticle;

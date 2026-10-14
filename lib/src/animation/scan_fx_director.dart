@@ -4,7 +4,8 @@ import 'package:flutter/animation.dart' show Curve, Curves;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/physics.dart' show SpringDescription;
 import 'package:flutter/scheduler.dart' show Ticker, TickerProvider;
-import 'package:flutter/widgets.dart' show BoxFit, Offset, Rect, Size, TextDirection;
+import 'package:flutter/widgets.dart'
+    show BoxFit, Offset, Rect, Size, TextDirection;
 
 import '../controller/qr_scan_fx_controller.dart';
 import '../geometry/scan_fx_quad.dart';
@@ -110,8 +111,7 @@ class ScanFxDirector extends ChangeNotifier {
   bool get reduceMotion => _reduceMotion;
 
   /// The motion spec after speed and reduce-motion are applied.
-  ScanFxMotion get _motion =>
-      _cachedMotion ??= _theme.motion.scale(
+  ScanFxMotion get _motion => _cachedMotion ??= _theme.motion.scale(
         speedMultiplier: _theme.tunables.speed,
         reduceMotion: _reduceMotion,
       );
@@ -233,6 +233,7 @@ class ScanFxDirector extends ChangeNotifier {
     if (size != _size) {
       _size = size;
       _defaultQuad = null;
+      _rebuildLockedQuad();
       _frameDirty = true;
       _revision++;
       _syncTicker();
@@ -368,7 +369,8 @@ class ScanFxDirector extends ChangeNotifier {
   void _applyState(ScanFxState from, ScanFxState to, {required bool animate}) {
     final m = _motion;
 
-    void spring(ScanFxSpringValue value, double target, SpringDescription spring) {
+    void spring(
+        ScanFxSpringValue value, double target, SpringDescription spring) {
       if (animate) {
         value.animateTo(target, description: spring);
       } else {
@@ -456,7 +458,8 @@ class ScanFxDirector extends ChangeNotifier {
           _feedback.jumpTo(1);
         } else if (animate) {
           _feedback.jumpTo(0);
-          _feedback.animateTo(1, duration: m.effective(burst), curve: Curves.linear);
+          _feedback.animateTo(1,
+              duration: m.effective(burst), curve: Curves.linear);
         } else {
           _feedback.jumpTo(1);
         }
@@ -478,7 +481,9 @@ class ScanFxDirector extends ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   bool get _ambientEnabled =>
-      !_reduceMotion && !controller.value.isTerminal && _stack.hasAnimatedLayers;
+      !_reduceMotion &&
+      !controller.value.isTerminal &&
+      _stack.hasAnimatedLayers;
 
   bool get _needsTick =>
       _ambientEnabled ||

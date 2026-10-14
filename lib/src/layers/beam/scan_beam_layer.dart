@@ -26,8 +26,8 @@ import '../scan_layer.dart';
 /// The current values live in mutable fields rather than a returned record, so a
 /// style can call [computeRail] several times per frame without allocating.
 abstract class ScanBeamLayer extends ScanLayer {
-  /// Const constructor.
-  const ScanBeamLayer();
+  /// Creates the base.
+  ScanBeamLayer();
 
   @override
   ScanLayerKind get kind => ScanLayerKind.beam;

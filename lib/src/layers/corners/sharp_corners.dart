@@ -9,7 +9,7 @@ import 'scan_corner_layer.dart';
 /// kind of styling decision the [ScanCornerLayer] base is designed to isolate.
 class SharpCorners extends ScanCornerLayer {
   /// Creates the style.
-  const SharpCorners();
+  SharpCorners();
 
   @override
   StrokeCap get cap => StrokeCap.butt;

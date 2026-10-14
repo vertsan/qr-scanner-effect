@@ -40,9 +40,7 @@ enum ScanFxState {
 
   /// Whether a target quad is being tracked or held in this state.
   bool get hasTarget =>
-      this == ScanFxState.detected ||
-      this == ScanFxState.locked ||
-      isTerminal;
+      this == ScanFxState.detected || this == ScanFxState.locked || isTerminal;
 
   /// Whether the scan beam should be drawn in this state.
   bool get showsBeam =>

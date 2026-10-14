@@ -14,7 +14,7 @@ import 'scan_beam_layer.dart';
 /// reuses one shader instead of building one per frame.
 class SoftGradientBarBeam extends ScanBeamLayer {
   /// Creates the style.
-  const SoftGradientBarBeam();
+  SoftGradientBarBeam();
 
   Shader? _shader;
   int _shaderKey = -1;
@@ -23,7 +23,8 @@ class SoftGradientBarBeam extends ScanBeamLayer {
   void drawBeam(Canvas canvas, Rect local, ScanFxFrame frame, double t) {
     final width = frame.beamThickness;
     final color = ScanFxPalette.fade(frame.theme.beamColor, frame.reveal);
-    final accent = ScanFxPalette.fade(frame.theme.beamAccentColor, frame.reveal);
+    final accent =
+        ScanFxPalette.fade(frame.theme.beamAccentColor, frame.reveal);
     final sigma = ScanGlow.sigmaFor(frame.glow * 0.7, width);
 
     if (hasBand) {
@@ -69,8 +70,7 @@ class SoftGradientBarBeam extends ScanBeamLayer {
     final clearEdge = math.min(0.0, travel);
     final solidEdge = math.max(0.0, travel);
     final band = bandVertical
-        ? Rect.fromLTRB(
-            -local.width / 2, clearEdge, local.width / 2, solidEdge)
+        ? Rect.fromLTRB(-local.width / 2, clearEdge, local.width / 2, solidEdge)
         : Rect.fromLTRB(
             clearEdge, -local.height / 2, solidEdge, local.height / 2);
 

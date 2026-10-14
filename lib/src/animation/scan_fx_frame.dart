@@ -212,7 +212,6 @@ class ScanFxFrame {
     return Offset(value * amplitude, 0);
   }
 
-
   static double _wander(double p) {
     final a = math.sin(2 * math.pi * p);
     final b = math.sin(2 * math.pi * 2.7 * p + 1.3);

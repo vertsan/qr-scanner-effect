@@ -15,8 +15,8 @@ import '../scan_layer.dart';
 /// [ScanIdleStyle.shimmer] highlight. That is why a new frame shape is a
 /// ten-line class rather than a hundred-line painter.
 abstract class ScanFrameLayer extends ScanLayer {
-  /// Const constructor.
-  const ScanFrameLayer();
+  /// Creates the base.
+  ScanFrameLayer();
 
   @override
   ScanLayerKind get kind => ScanLayerKind.frame;

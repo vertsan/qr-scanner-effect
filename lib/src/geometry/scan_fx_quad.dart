@@ -1,8 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui' show Offset, Rect;
 
-import 'package:flutter/painting.dart' show Size;
-
 /// An animatable quadrilateral in overlay space.
 ///
 /// Frames, corner brackets, beams and the focus reticle all read the *same*
@@ -82,7 +80,8 @@ class ScanFxQuad {
   final Offset bottomLeft;
 
   /// The corners in `topLeft, topRight, bottomRight, bottomLeft` order.
-  List<Offset> get points => <Offset>[topLeft, topRight, bottomRight, bottomLeft];
+  List<Offset> get points =>
+      <Offset>[topLeft, topRight, bottomRight, bottomLeft];
 
   /// The axis-aligned bounding box of the quad.
   Rect get bounds {
@@ -225,7 +224,8 @@ class ScanFxQuad {
       final a = pts[i];
       final b = pts[(i + 1) % 4];
       final c = pts[(i + 2) % 4];
-      final cross = (b.dx - a.dx) * (c.dy - b.dy) - (b.dy - a.dy) * (c.dx - b.dx);
+      final cross =
+          (b.dx - a.dx) * (c.dy - b.dy) - (b.dy - a.dy) * (c.dx - b.dx);
       if (cross > 1e-6) positive++;
       if (cross < -1e-6) negative++;
     }

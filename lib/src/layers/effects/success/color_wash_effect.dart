@@ -11,7 +11,7 @@ import '../scan_effect_layer.dart';
 /// particles, just the frame acknowledging the read.
 class ColorWashEffect extends ScanEffectLayer {
   /// Creates the style.
-  const ColorWashEffect();
+  ColorWashEffect();
 
   /// Peak opacity of the wash at full intensity.
   static const double _peak = 0.32;

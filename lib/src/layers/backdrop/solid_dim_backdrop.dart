@@ -14,7 +14,7 @@ import 'scan_backdrop_layer.dart';
 /// path for low-end devices.
 class SolidDimBackdrop extends ScanBackdropLayer {
   /// Creates the style.
-  const SolidDimBackdrop();
+  SolidDimBackdrop();
 
   late final ScanPaintCache _cache = ScanPaintCache();
 

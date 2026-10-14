@@ -12,7 +12,7 @@ import 'scan_corner_layer.dart';
 /// on the frame and inherit the same convergence and glow as the arms.
 class DotCorners extends ScanCornerLayer {
   /// Creates the style.
-  const DotCorners();
+  DotCorners();
 
   @override
   void paint(Canvas canvas, Size size, ScanFxFrame frame) {

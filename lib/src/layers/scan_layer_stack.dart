@@ -17,12 +17,14 @@ class ScanLayerEntry {
   final bool visible;
 
   /// Copy with overrides.
-  ScanLayerEntry copyWith({ScanLayer layer, bool? visible}) =>
+  ScanLayerEntry copyWith({ScanLayer? layer, bool? visible}) =>
       ScanLayerEntry(layer ?? this.layer, visible: visible ?? this.visible);
 
   @override
   bool operator ==(Object other) =>
-      other is ScanLayerEntry && other.layer == layer && other.visible == visible;
+      other is ScanLayerEntry &&
+      other.layer == layer &&
+      other.visible == visible;
 
   @override
   int get hashCode => Object.hash(layer, visible);
@@ -70,7 +72,8 @@ class ScanLayerStack {
   /// Whether any layer in the stack wants a widget-level hook at all.
   bool get wantsWidget {
     for (final entry in entries) {
-      if (entry.visible && (entry.layer.wantsWidget || entry.layer.wantsOverlay)) {
+      if (entry.visible &&
+          (entry.layer.wantsWidget || entry.layer.wantsOverlay)) {
         return true;
       }
     }

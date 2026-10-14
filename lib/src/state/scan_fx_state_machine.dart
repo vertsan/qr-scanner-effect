@@ -133,10 +133,7 @@ class ScanFxStateMachine {
 
   static ScanFxState? _fromTracked(ScanFxState from, ScanFxState to) {
     return switch (from) {
-      ScanFxState.scanning ||
-      ScanFxState.detected ||
-      ScanFxState.locked =>
-        to,
+      ScanFxState.scanning || ScanFxState.detected || ScanFxState.locked => to,
       // A terminal state may be overwritten (e.g. a second code read fails).
       ScanFxState.success || ScanFxState.error || ScanFxState.invalid => to,
       ScanFxState.idle => null,

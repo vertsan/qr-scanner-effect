@@ -23,8 +23,8 @@ import '../scan_layer.dart';
 /// the motion. That is why a colour wash stays tinted and a glow stays lit
 /// rather than blinking past the user.
 abstract class ScanEffectLayer extends ScanLayer {
-  /// Const constructor.
-  const ScanEffectLayer();
+  /// Creates the base.
+  ScanEffectLayer();
 
   @override
   ScanLayerKind get kind => ScanLayerKind.effects;
@@ -81,7 +81,7 @@ abstract class ScanEffectLayer extends ScanLayer {
 /// opts out of every burst does not keep the ticker alive.
 class NoEffectLayer extends ScanLayer {
   /// Creates a no-op layer occupying [kind].
-  const NoEffectLayer(this.kind);
+  NoEffectLayer(this.kind);
 
   @override
   final ScanLayerKind kind;

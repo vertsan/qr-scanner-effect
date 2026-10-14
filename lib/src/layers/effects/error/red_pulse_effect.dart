@@ -13,7 +13,7 @@ import '../scan_effect_layer.dart';
 /// instead of being cut off mid-flash.
 class RedPulseEffect extends ScanEffectLayer {
   /// Creates the style.
-  const RedPulseEffect();
+  RedPulseEffect();
 
   /// Peak opacity of the rim at full intensity.
   static const double _peak = 0.85;

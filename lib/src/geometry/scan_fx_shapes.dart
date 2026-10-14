@@ -96,8 +96,7 @@ class ScanFxShapes {
   }
 
   /// A closed polyline through [points].
-  static Path polyline(List<Offset> points) =>
-      Path()..addPolygon(points, true);
+  static Path polyline(List<Offset> points) => Path()..addPolygon(points, true);
 
   /// A rounded version of an arbitrary (possibly rotated) quad.
   ///
@@ -157,9 +156,11 @@ class ScanFxShapes {
     Offset outgoing,
     double length,
   ) {
-    path.moveTo(corner.dx + incoming.dx * length, corner.dy + incoming.dy * length);
+    path.moveTo(
+        corner.dx + incoming.dx * length, corner.dy + incoming.dy * length);
     path.lineTo(corner.dx, corner.dy);
-    path.lineTo(corner.dx + outgoing.dx * length, corner.dy + outgoing.dy * length);
+    path.lineTo(
+        corner.dx + outgoing.dx * length, corner.dy + outgoing.dy * length);
   }
 
   /// Clamps [radius] so it can never exceed half of the smaller side.

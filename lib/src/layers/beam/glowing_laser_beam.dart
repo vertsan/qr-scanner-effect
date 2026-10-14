@@ -13,7 +13,7 @@ import 'scan_beam_layer.dart';
 /// tunable to `0` removes both blur passes and leaves the crisp core.
 class GlowingLaserBeam extends ScanBeamLayer {
   /// Creates the style.
-  const GlowingLaserBeam();
+  GlowingLaserBeam();
 
   @override
   void drawBeam(Canvas canvas, Rect local, ScanFxFrame frame, double t) {

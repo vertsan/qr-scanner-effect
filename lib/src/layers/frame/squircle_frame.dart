@@ -12,7 +12,7 @@ import 'scan_frame_layer.dart';
 /// corner closely, and higher values square it up further.
 class SquircleFrame extends ScanFrameLayer {
   /// Creates the style.
-  const SquircleFrame();
+  SquircleFrame();
 
   @override
   Path buildOutline(ScanFxFrame frame) => ScanFxShapes.superellipse(

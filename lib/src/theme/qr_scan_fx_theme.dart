@@ -2,7 +2,6 @@ import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/physics.dart' show SpringDescription;
 
 import 'scan_fx_labels.dart';
 import 'scan_fx_motion.dart';
@@ -131,7 +130,8 @@ class QrScanFxTheme extends ThemeExtension<QrScanFxTheme> {
     successStyle: ScanSuccessStyle.colorWash,
     errorStyle: ScanErrorStyle.fadeBlink,
     idleStyle: ScanIdleStyle.breathing,
-    backdrop: ScanBackdropOptions(dimOpacity: 0.6, deepenedOpacity: 0.7, feather: 20),
+    backdrop:
+        ScanBackdropOptions(dimOpacity: 0.6, deepenedOpacity: 0.7, feather: 20),
     beam: ScanBeamOptions(
       period: Duration(milliseconds: 2400),
       thickness: 2.5,
@@ -237,18 +237,22 @@ class QrScanFxTheme extends ThemeExtension<QrScanFxTheme> {
   ///
   /// Colours are picked in HSL around a random hue and then forced through
   /// [ScanFxPalette.ensureContrast], so even random themes stay readable.
-  factory QrScanFxTheme.random({int? seed, Brightness brightness = Brightness.dark}) {
+  factory QrScanFxTheme.random(
+      {int? seed, Brightness brightness = Brightness.dark}) {
     final random = math.Random(seed);
     final isDark = brightness == Brightness.dark;
     final hue = random.nextDouble() * 360;
-    final accent = HSLColor.fromAHSL(1, hue, 0.72, isDark ? 0.62 : 0.42).toColor();
+    final accent =
+        HSLColor.fromAHSL(1, hue, 0.72, isDark ? 0.62 : 0.42).toColor();
     final backdrop = isDark ? const Color(0xFF06090F) : const Color(0xFFF8FAFC);
     final hintBackground =
         isDark ? const Color(0xCC0B1220) : const Color(0xE6FFFFFF);
     return QrScanFxTheme(
       frameColor: ScanFxPalette.ensureContrast(accent, backdrop),
       frameGlowColor: accent,
-      cornerColor: isDark ? Colors.white : ScanFxPalette.ensureContrast(accent, backdrop),
+      cornerColor: isDark
+          ? Colors.white
+          : ScanFxPalette.ensureContrast(accent, backdrop),
       beamColor: HSLColor.fromAHSL(1, (hue + 30) % 360, 0.8, 0.7).toColor(),
       beamAccentColor: isDark ? Colors.white : backdrop,
       backdropColor: backdrop,
@@ -265,8 +269,8 @@ class QrScanFxTheme extends ThemeExtension<QrScanFxTheme> {
         backdrop,
       ),
       hintBackgroundColor: hintBackground,
-      hintTextColor:
-          ScanFxPalette.ensureContrast(isDark ? Colors.white : accent, hintBackground),
+      hintTextColor: ScanFxPalette.ensureContrast(
+          isDark ? Colors.white : accent, hintBackground),
       glowStrength: isDark ? 0.6 : 0.3,
       cornerRadius: 20 + random.nextDouble() * 24,
       frameShape: ScanFrameShape.values[random.nextInt(4)],
@@ -406,8 +410,7 @@ class QrScanFxTheme extends ThemeExtension<QrScanFxTheme> {
   double get resolvedGlow => tunables.glow ?? glowStrength;
 
   /// The beam thickness after applying any tunable override.
-  double get resolvedBeamThickness =>
-      tunables.beamThickness ?? beam.thickness;
+  double get resolvedBeamThickness => tunables.beamThickness ?? beam.thickness;
 
   /// The backdrop blur radius after applying any tunable override.
   double get resolvedBlurSigma => tunables.blurSigma ?? backdrop.blurSigma;
@@ -417,7 +420,8 @@ class QrScanFxTheme extends ThemeExtension<QrScanFxTheme> {
   SpringDescription get lockSpring => switch (lockStyle) {
         ScanLockStyle.smoothMorph => motion.calmLockSpring,
         ScanLockStyle.zoomIn => motion.zoomSpring,
-        ScanLockStyle.springSnap || ScanLockStyle.none =>
+        ScanLockStyle.springSnap ||
+        ScanLockStyle.none =>
           motion.effectiveLockSpring,
       };
 
@@ -527,11 +531,13 @@ class QrScanFxTheme extends ThemeExtension<QrScanFxTheme> {
       hintTextColor: Color.lerp(hintTextColor, other.hintTextColor, t)!,
       scrimColor: Color.lerp(scrimColor, other.scrimColor, t)!,
       glowStrength: lerpDouble(glowStrength, other.glowStrength, t)!,
-      squircleExponent: lerpDouble(squircleExponent, other.squircleExponent, t)!,
+      squircleExponent:
+          lerpDouble(squircleExponent, other.squircleExponent, t)!,
       frameShape: discrete ? frameShape : other.frameShape,
       cornerStyle: discrete ? cornerStyle : other.cornerStyle,
       cornerRadius: lerpDouble(cornerRadius, other.cornerRadius, t)!,
-      frameStrokeWidth: lerpDouble(frameStrokeWidth, other.frameStrokeWidth, t)!,
+      frameStrokeWidth:
+          lerpDouble(frameStrokeWidth, other.frameStrokeWidth, t)!,
       cornerStrokeWidth:
           lerpDouble(cornerStrokeWidth, other.cornerStrokeWidth, t)!,
       cornerArmFraction:
@@ -549,9 +555,8 @@ class QrScanFxTheme extends ThemeExtension<QrScanFxTheme> {
       error: ScanErrorOptions.lerp(error, other.error, t),
       motion: discrete ? motion : other.motion,
       tunables: ScanFxTunables.lerp(tunables, other.tunables, t),
-      hintTextStyle:
-          TextStyle.lerp(hintTextStyle, other.hintTextStyle, t) ??
-              hintTextStyle,
+      hintTextStyle: TextStyle.lerp(hintTextStyle, other.hintTextStyle, t) ??
+          hintTextStyle,
       labels: discrete ? labels : other.labels,
     );
   }

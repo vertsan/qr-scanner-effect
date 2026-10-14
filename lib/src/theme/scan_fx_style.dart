@@ -345,8 +345,7 @@ class ScanSuccessOptions {
 
   @override
   bool operator ==(Object other) =>
-      other is ScanSuccessOptions &&
-      other.checkStrokeWidth == checkStrokeWidth;
+      other is ScanSuccessOptions && other.checkStrokeWidth == checkStrokeWidth;
 
   @override
   int get hashCode => checkStrokeWidth.hashCode;
@@ -476,5 +475,6 @@ double _lerp(double a, double b, double t) => a + (b - a) * t;
 
 Duration _lerpDuration(Duration a, Duration b, double t) => Duration(
       microseconds:
-          (a.inMicroseconds + (b.inMicroseconds - a.inMicroseconds) * t).round(),
+          (a.inMicroseconds + (b.inMicroseconds - a.inMicroseconds) * t)
+              .round(),
     );

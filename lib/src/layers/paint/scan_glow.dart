@@ -1,5 +1,4 @@
-import 'dart:ui'
-    show Canvas, Color, Offset, PaintingStyle, Path, Rect;
+import 'dart:ui' show Canvas, Color, Offset, PaintingStyle, Path, Rect;
 
 import 'scan_paint_cache.dart';
 

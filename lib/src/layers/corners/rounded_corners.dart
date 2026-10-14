@@ -6,5 +6,5 @@ import 'scan_corner_layer.dart';
 /// still read as a technical reticle.
 class RoundedCorners extends ScanCornerLayer {
   /// Creates the style.
-  const RoundedCorners();
+  RoundedCorners();
 }

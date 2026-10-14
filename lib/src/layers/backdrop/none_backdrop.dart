@@ -9,7 +9,7 @@ import 'scan_backdrop_layer.dart';
 /// screenshot-friendly store listings.
 class NoneBackdrop extends ScanBackdropLayer {
   /// Creates the style.
-  const NoneBackdrop();
+  NoneBackdrop();
 
   @override
   bool get animated => false;

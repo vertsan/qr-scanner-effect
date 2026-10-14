@@ -12,7 +12,7 @@ import 'scan_backdrop_layer.dart';
 /// dimming the whole preview.
 class GradientFadeBackdrop extends ScanBackdropLayer {
   /// Creates the style.
-  const GradientFadeBackdrop({this.fromBottom = true});
+  GradientFadeBackdrop({this.fromBottom = true});
 
   /// When `true` the fade is strongest at the bottom edge.
   final bool fromBottom;
@@ -47,8 +47,12 @@ class GradientFadeBackdrop extends ScanBackdropLayer {
       _shaderFromBottom = fromBottom;
       final strong = ScanFxPalette.withAlpha(outer, opacity.clamp(0.0, 0.96));
       final clear = ScanFxPalette.withAlpha(outer, 0);
-      final from = fromBottom ? size.bottomCenter(Offset.zero) : size.topCenter(Offset.zero);
-      final to = fromBottom ? size.topCenter(Offset.zero) : size.bottomCenter(Offset.zero);
+      final from = fromBottom
+          ? size.bottomCenter(Offset.zero)
+          : size.topCenter(Offset.zero);
+      final to = fromBottom
+          ? size.topCenter(Offset.zero)
+          : size.bottomCenter(Offset.zero);
       _shader = Gradient.linear(
         from,
         to,

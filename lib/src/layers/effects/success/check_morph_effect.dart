@@ -1,4 +1,4 @@
-import 'dart:ui' show Canvas, Color, Offset, Size;
+import 'dart:ui' show Canvas, Offset, Size;
 
 import '../../../animation/scan_fx_frame.dart';
 import '../../../geometry/scan_fx_quad.dart';
@@ -17,7 +17,7 @@ import '../scan_effect_layer.dart';
 /// effect is the check mark, and skipping the motion keeps that result.
 class CheckMorphEffect extends ScanEffectLayer {
   /// Creates the style.
-  const CheckMorphEffect();
+  CheckMorphEffect();
 
   /// Where the draw-on starts within the success burst.
   static const double _start = 0.02;

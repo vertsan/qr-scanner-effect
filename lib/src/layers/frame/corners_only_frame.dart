@@ -16,7 +16,7 @@ import 'scan_frame_layer.dart';
 /// top of it.
 class CornersOnlyFrame extends ScanFrameLayer {
   /// Creates the style.
-  const CornersOnlyFrame();
+  CornersOnlyFrame();
 
   @override
   bool get animated => false;

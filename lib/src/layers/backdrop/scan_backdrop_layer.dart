@@ -16,8 +16,8 @@ import '../scan_layer.dart';
 /// The path is cached and rebuilt only when the quad, radius, shape or size
 /// actually changes, so a still frame allocates nothing.
 abstract class ScanBackdropLayer extends ScanLayer {
-  /// Const constructor.
-  const ScanBackdropLayer();
+  /// Creates the base.
+  ScanBackdropLayer();
 
   @override
   ScanLayerKind get kind => ScanLayerKind.backdrop;

@@ -12,7 +12,7 @@ import 'scan_beam_layer.dart';
 /// the code's rotation for free.
 class LineBeam extends ScanBeamLayer {
   /// Creates the style.
-  const LineBeam();
+  LineBeam();
 
   static const int _ghosts = 4;
 
@@ -20,7 +20,8 @@ class LineBeam extends ScanBeamLayer {
   void drawBeam(Canvas canvas, Rect local, ScanFxFrame frame, double t) {
     final width = frame.beamThickness;
     final color = ScanFxPalette.fade(frame.theme.beamColor, frame.reveal);
-    final accent = ScanFxPalette.fade(frame.theme.beamAccentColor, frame.reveal);
+    final accent =
+        ScanFxPalette.fade(frame.theme.beamAccentColor, frame.reveal);
     final trail = frame.theme.beam.trail.clamp(0.0, 1.0);
     final sigma = ScanGlow.sigmaFor(frame.glow * 0.5, width);
 

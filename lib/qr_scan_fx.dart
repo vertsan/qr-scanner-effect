@@ -52,8 +52,7 @@ export 'src/geometry/scan_geometry_mapper.dart' show ScanGeometryMapper;
 export 'src/layers/hint/scan_hint_layer.dart' show ScanHintLayer, ScanHintView;
 export 'src/layers/scan_fx_registry.dart' show ScanFxRegistry;
 export 'src/layers/scan_layer.dart' show CustomScanLayer, ScanLayer;
-export 'src/layers/scan_layer_stack.dart'
-    show ScanLayerEntry, ScanLayerStack;
+export 'src/layers/scan_layer_stack.dart' show ScanLayerEntry, ScanLayerStack;
 export 'src/state/scan_fx_state.dart' show ScanFxState;
 export 'src/state/scan_fx_state_machine.dart'
     show ScanFxStateMachine, ScanFxTrigger;

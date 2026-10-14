@@ -50,50 +50,50 @@ import 'scan_layer_stack.dart';
 abstract final class ScanFxRegistry {
   /// The frame layer for [shape].
   static ScanFrameLayer frame(ScanFrameShape shape) => switch (shape) {
-        ScanFrameShape.roundedSquare => const RoundedSquareFrame(),
-        ScanFrameShape.squircle => const SquircleFrame(),
-        ScanFrameShape.circle => const CircleFrame(),
-        ScanFrameShape.cornersOnly => const CornersOnlyFrame(),
+        ScanFrameShape.roundedSquare => RoundedSquareFrame(),
+        ScanFrameShape.squircle => SquircleFrame(),
+        ScanFrameShape.circle => CircleFrame(),
+        ScanFrameShape.cornersOnly => CornersOnlyFrame(),
       };
 
   /// The corner-bracket layer for [style].
   static ScanCornerLayer corners(ScanCornerStyle style) => switch (style) {
-        ScanCornerStyle.rounded => const RoundedCorners(),
-        ScanCornerStyle.sharp => const SharpCorners(),
-        ScanCornerStyle.dot => const DotCorners(),
+        ScanCornerStyle.rounded => RoundedCorners(),
+        ScanCornerStyle.sharp => SharpCorners(),
+        ScanCornerStyle.dot => DotCorners(),
       };
 
   /// The beam layer for [style].
   static ScanBeamLayer beam(ScanBeamStyle style) => switch (style) {
-        ScanBeamStyle.line => const LineBeam(),
-        ScanBeamStyle.softGradientBar => const SoftGradientBarBeam(),
-        ScanBeamStyle.glowingLaser => const GlowingLaserBeam(),
+        ScanBeamStyle.line => LineBeam(),
+        ScanBeamStyle.softGradientBar => SoftGradientBarBeam(),
+        ScanBeamStyle.glowingLaser => GlowingLaserBeam(),
       };
 
   /// The backdrop layer for [style].
   static ScanBackdropLayer backdrop(ScanBackdropStyle style) => switch (style) {
-        ScanBackdropStyle.solidDim => const SolidDimBackdrop(),
-        ScanBackdropStyle.blurredFrost => const BlurredFrostBackdrop(),
-        ScanBackdropStyle.vignette => const VignetteBackdrop(),
-        ScanBackdropStyle.gradientFade => const GradientFadeBackdrop(),
-        ScanBackdropStyle.none => const NoneBackdrop(),
+        ScanBackdropStyle.solidDim => SolidDimBackdrop(),
+        ScanBackdropStyle.blurredFrost => BlurredFrostBackdrop(),
+        ScanBackdropStyle.vignette => VignetteBackdrop(),
+        ScanBackdropStyle.gradientFade => GradientFadeBackdrop(),
+        ScanBackdropStyle.none => NoneBackdrop(),
       };
 
   /// The lock-on reticle for [style].
   static ScanLayer reticle(ScanLockStyle style) => switch (style) {
-        ScanLockStyle.none => const NoEffectLayer(ScanLayerKind.reticle),
+        ScanLockStyle.none => NoEffectLayer(ScanLayerKind.reticle),
         ScanLockStyle.springSnap ||
         ScanLockStyle.smoothMorph ||
         ScanLockStyle.zoomIn =>
-          const LockPulseReticle(),
+          LockPulseReticle(),
       };
 
   /// The success effect for [style].
   static ScanLayer success(ScanSuccessStyle style) => switch (style) {
-        ScanSuccessStyle.checkMorph => const CheckMorphEffect(),
-        ScanSuccessStyle.colorWash => const ColorWashEffect(),
-        ScanSuccessStyle.glowFlash => const GlowFlashEffect(),
-        ScanSuccessStyle.none => const NoEffectLayer(ScanLayerKind.effects),
+        ScanSuccessStyle.checkMorph => CheckMorphEffect(),
+        ScanSuccessStyle.colorWash => ColorWashEffect(),
+        ScanSuccessStyle.glowFlash => GlowFlashEffect(),
+        ScanSuccessStyle.none => NoEffectLayer(ScanLayerKind.effects),
       };
 
   /// The fault effect for [style].
@@ -101,18 +101,19 @@ abstract final class ScanFxRegistry {
   /// One layer covers both the `error` and `invalid` states: the effect is
   /// identical, only the colour differs, and the colour comes from the frame.
   static ScanLayer error(ScanErrorStyle style) => switch (style) {
-        ScanErrorStyle.shake => const ShakeErrorEffect(),
-        ScanErrorStyle.redPulse => const RedPulseEffect(),
-        ScanErrorStyle.fadeBlink => const FadeBlinkEffect(),
-        ScanErrorStyle.none => const NoEffectLayer(ScanLayerKind.effects),
+        ScanErrorStyle.shake => ShakeErrorEffect(),
+        ScanErrorStyle.redPulse => RedPulseEffect(),
+        ScanErrorStyle.fadeBlink => FadeBlinkEffect(),
+        ScanErrorStyle.none => NoEffectLayer(ScanLayerKind.effects),
       };
 
   /// The idle-motion modifier for [style].
-  static ScanFxIdleModifier idleModifier(ScanIdleStyle style) => switch (style) {
-        ScanIdleStyle.breathing => const BreathingIdle(),
-        ScanIdleStyle.floating => const FloatingIdle(),
-        ScanIdleStyle.shimmer => const ShimmerIdle(),
-        ScanIdleStyle.still => const StillIdle(),
+  static ScanFxIdleModifier idleModifier(ScanIdleStyle style) =>
+      switch (style) {
+        ScanIdleStyle.breathing => BreathingIdle(),
+        ScanIdleStyle.floating => FloatingIdle(),
+        ScanIdleStyle.shimmer => ShimmerIdle(),
+        ScanIdleStyle.still => StillIdle(),
       };
 
   /// The default layer stack for [theme], in paint order.
@@ -130,6 +131,6 @@ abstract final class ScanFxRegistry {
         reticle(theme.lockStyle),
         success(theme.successStyle),
         error(theme.errorStyle),
-        const ScanHintLayer(),
+        ScanHintLayer(),
       ]);
 }

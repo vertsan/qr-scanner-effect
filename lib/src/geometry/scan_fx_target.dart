@@ -26,8 +26,8 @@ class ScanFxTarget {
     this.flipY = false,
     this.quarterTurns = 0,
   })  : corners = null,
-        assert(quarterTurns >= 0 && quarterTurns < 4,
-            'quarterTurns must be 0..3');
+        assert(
+            quarterTurns >= 0 && quarterTurns < 4, 'quarterTurns must be 0..3');
 
   /// Creates a target from four corner points.
   ///

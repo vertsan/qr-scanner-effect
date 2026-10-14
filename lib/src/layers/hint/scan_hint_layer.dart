@@ -1,9 +1,6 @@
-import 'dart:ui' show Canvas, Size;
-
 import 'package:flutter/widgets.dart';
 
 import '../../animation/scan_fx_frame.dart';
-import '../../theme/qr_scan_fx_theme.dart';
 import '../../theme/scan_fx_style.dart';
 import '../scan_layer.dart';
 
@@ -18,7 +15,7 @@ import '../scan_layer.dart';
 /// sixty times a second.
 class ScanHintLayer extends ScanLayer {
   /// Creates the slot.
-  const ScanHintLayer();
+  ScanHintLayer();
 
   @override
   ScanLayerKind get kind => ScanLayerKind.hint;
@@ -73,7 +70,8 @@ class ScanHintView extends StatelessWidget {
           child: AnimatedAlign(
             duration: duration,
             curve: Curves.easeOutCubic,
-            alignment: Alignment(0, (axis - (visible ? 0 : 0.05)).clamp(-0.94, 0.94)),
+            alignment:
+                Alignment(0, (axis - (visible ? 0 : 0.05)).clamp(-0.94, 0.94)),
             child: AnimatedOpacity(
               duration: duration,
               curve: Curves.easeOutCubic,

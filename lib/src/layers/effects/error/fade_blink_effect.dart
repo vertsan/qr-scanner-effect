@@ -13,7 +13,7 @@ import '../scan_effect_layer.dart';
 /// the safest choice for hosts whose scan area sits over important UI.
 class FadeBlinkEffect extends ScanEffectLayer {
   /// Creates the style.
-  const FadeBlinkEffect();
+  FadeBlinkEffect();
 
   /// How many blinks play across the burst.
   static const int _blinks = 2;

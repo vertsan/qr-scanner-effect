@@ -11,7 +11,7 @@ import '../scan_effect_layer.dart';
 /// appears to spread and dissipate rather than simply fade.
 class GlowFlashEffect extends ScanEffectLayer {
   /// Creates the style.
-  const GlowFlashEffect();
+  GlowFlashEffect();
 
   @override
   void paint(Canvas canvas, Size size, ScanFxFrame frame) {

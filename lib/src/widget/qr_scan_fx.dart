@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 
 import '../animation/scan_fx_director.dart';
 import '../controller/qr_scan_fx_controller.dart';
@@ -9,12 +8,14 @@ import '../layers/scan_layer_painter.dart';
 import '../layers/scan_layer_stack.dart';
 import '../state/scan_fx_state.dart';
 import '../theme/qr_scan_fx_theme.dart';
+import '../theme/scan_fx_tunables.dart';
 
 /// Lets a host reorder, hide, replace or extend the default layer stack.
 ///
 /// Called on every rebuild with the stack the theme produced, and must return the
-/// stack to paint. Because every built-in layer is `const`, returning an
-/// unmodified stack costs a handful of `identical` checks and no repaint.
+/// stack to paint. Returning the same instances keeps every layer's paint cache
+/// warm; returning fresh layers simply costs one geometry rebuild on the next
+/// frame.
 typedef ScanLayersBuilder = ScanLayerStack Function(
   BuildContext context,
   ScanLayerStack stack,
@@ -167,10 +168,12 @@ class _QrScanFxState extends State<QrScanFx>
   bool _reporting = false;
 
   ScanFxDirector? _director;
-  QrScanFxTheme? _theme;
   TextDirection _textDirection = TextDirection.ltr;
   ScanFxState? _lastReportedState;
   bool _tunablesSeeded = false;
+
+  ScanLayerStack? _baseStack;
+  QrScanFxTheme? _baseStackTheme;
 
   ScanFxDirector get _core => _director!;
 
@@ -322,27 +325,26 @@ class _QrScanFxState extends State<QrScanFx>
     if (state == _lastReportedState) return;
     _lastReportedState = state;
     widget.onStateChanged?.call(state);
-    _announce(state);
-  }
-
-  /// Announces [state] to assistive technology.
-  ///
-  /// `detected` is skipped because `locked` follows it with the same wording, and
-  /// saying "Code detected" twice within 140 ms is noise rather than information.
-  void _announce(ScanFxState state) {
-    if (state == ScanFxState.detected) return;
-    final theme = _theme;
-    if (theme == null) return;
-    final label = theme.labels.labelFor(state);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !SemanticsBinding.instance.semanticsEnabled) return;
-      SemanticsService.announce(label, _textDirection);
-    });
   }
 
   // ---------------------------------------------------------------------------
   // Resolution
   // ---------------------------------------------------------------------------
+
+  /// The registry stack for [theme], built once per distinct theme.
+  ///
+  /// Keeping the instances alive across rebuilds is what makes the layers' paint
+  /// caches worth having: a rebuild that does not change the theme reuses the
+  /// exact same objects, so `updateMetrics` sees no change and no path is
+  /// rebuilt.
+  ScanLayerStack _baseStackFor(QrScanFxTheme theme) {
+    final cached = _baseStack;
+    if (cached != null && _baseStackTheme == theme) return cached;
+    final built = ScanFxRegistry.buildStack(theme);
+    _baseStack = built;
+    _baseStackTheme = theme;
+    return built;
+  }
 
   QrScanFxTheme _resolveTheme(BuildContext context) {
     final ambient = Theme.of(context);
@@ -359,9 +361,8 @@ class _QrScanFxState extends State<QrScanFx>
   Widget build(BuildContext context) {
     _textDirection = Directionality.maybeOf(context) ?? TextDirection.ltr;
     final theme = _resolveTheme(context);
-    _theme = theme;
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
-    final baseStack = ScanFxRegistry.buildStack(theme);
+    final baseStack = _baseStackFor(theme);
     final stack = widget.layers?.call(context, baseStack) ?? baseStack;
 
     return LayoutBuilder(
@@ -384,6 +385,11 @@ class _QrScanFxState extends State<QrScanFx>
         );
         final frame = _core.frameFor(size);
 
+        // The lifecycle state is exposed as a live region rather than through an
+        // imperative announcement: Flutter's own guidance is to let `Semantics`
+        // trigger announcements implicitly, which is also the only variant that
+        // behaves on Android and across multiple windows. `detected` and `locked`
+        // share wording, so the 140 ms hold does not double-speak.
         return Semantics(
           container: true,
           liveRegion: true,

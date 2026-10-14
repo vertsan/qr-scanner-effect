@@ -11,7 +11,7 @@ import 'scan_frame_layer.dart';
 /// enclosed in a loose axis-aligned box.
 class RoundedSquareFrame extends ScanFrameLayer {
   /// Creates the style.
-  const RoundedSquareFrame();
+  RoundedSquareFrame();
 
   @override
   Path buildOutline(ScanFxFrame frame) =>

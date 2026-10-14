@@ -18,7 +18,7 @@ import '../scan_effect_layer.dart';
 /// flare in the invalid colour.
 class ShakeErrorEffect extends ScanEffectLayer {
   /// Creates the style.
-  const ShakeErrorEffect();
+  ShakeErrorEffect();
 
   @override
   void paint(Canvas canvas, Size size, ScanFxFrame frame) {

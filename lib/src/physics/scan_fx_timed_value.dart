@@ -28,8 +28,9 @@ class ScanFxTimedValue {
   double get target => _to;
 
   /// The 0..1 progress of the current transition.
-  double get progress =>
-      _durationSeconds <= 0 ? 1 : (_elapsedSeconds / _durationSeconds).clamp(0, 1);
+  double get progress => _durationSeconds <= 0
+      ? 1
+      : (_elapsedSeconds / _durationSeconds).clamp(0, 1);
 
   /// Snaps to [value] and stops.
   void jumpTo(double value) {

@@ -22,8 +22,8 @@ import '../scan_layer.dart';
 /// target exactly, and they converge inwards as `focus` approaches `1`, which is
 /// what makes the lock feel like it is closing on the code.
 abstract class ScanCornerLayer extends ScanLayer {
-  /// Const constructor.
-  const ScanCornerLayer();
+  /// Creates the base.
+  ScanCornerLayer();
 
   @override
   ScanLayerKind get kind => ScanLayerKind.corners;

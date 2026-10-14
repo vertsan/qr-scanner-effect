@@ -13,7 +13,7 @@ import 'scan_backdrop_layer.dart';
 /// the scan area pop without touching the detector geometry.
 class VignetteBackdrop extends ScanBackdropLayer {
   /// Creates the style.
-  const VignetteBackdrop();
+  VignetteBackdrop();
 
   late final ScanPaintCache _cache = ScanPaintCache();
 

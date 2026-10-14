@@ -13,7 +13,7 @@ import 'scan_frame_layer.dart';
 /// choice rather than a bug.
 class CircleFrame extends ScanFrameLayer {
   /// Creates the style.
-  const CircleFrame();
+  CircleFrame();
 
   @override
   Path buildOutline(ScanFxFrame frame) => ScanFxShapes.oval(frame.quad.bounds);
