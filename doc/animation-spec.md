@@ -137,16 +137,22 @@ Flutter `SpringDescription(mass, stiffness, damping)`; `ζ = damping / (2·√(k
 
 | ID | Name | mass | stiffness `k` | damping `c` | ζ | Settle | Overshoot | Used by |
 |---|---|---|---|---|---|---|---|---|
-| **S1** | `reticleLock` | 1 | 180 | 19.32 | 0.72 | ~480 ms | ≈ 4 % | T2 `springSnap`, `appleVision` |
-| S2 | `reticleLockCalm` | 1 | 220 | 29.66 | 1.00 | ~340 ms | 0 % | banking lock, `minimalBank` |
-| S3 | `successSnap` | 1 | 240 | 22.00 | 0.71 | ~380 ms | ≈ 4.5 % | success frame settle |
-| S4 | `zoomIn` | 1 | 200 | 16.97 | 0.60 | ~420 ms | ≈ 9 % | `lock.zoomIn` scale |
-| S5 | `ringContract` | 1 | 260 | 25.80 | 0.80 | ~360 ms | ≈ 1.5 % | `lock.ringContract` radius |
-| S6 | `bracketCollapse` | 1 | 300 | 24.25 | 0.70 | ~300 ms | ≈ 5 % | `lock.bracketCollapse` inset |
-| S7 | `pulseLock` | 1 | 320 | 30.00 | 0.84 | ~280 ms | ≈ 2 % | **P1** lock pulse scale |
-| S8 | `glitchLock` | 1 | 420 | 21.00 | 0.51 | ~520 ms | ≈ 18 % | `lock.glitchLock` (intentionally bouncy) |
-| **R1** | `resetSpring` | 1 | 260 | 32.25 | 1.00 | ~300 ms | 0 % | T7 return to the default area |
-| **RX** | `reducedSpring` | 1 | 2600 | 102.0 | 1.00 | ~60 ms | 0 % | every spring under reduce-motion |
+| **S1** | `reticleLock` | 1 | 180 | 19.32 | 0.72 | ~480 ms | ≈ 4 % | T2 `springSnap` ✅ |
+| S2 | `reticleLockCalm` | 1 | 220 | 29.66 | 1.00 | ~340 ms | 0 % | banking lock, `minimalBank`, `lock.smoothMorph` ✅ |
+| S3 | `successSnap` | 1 | 240 | 22.00 | 0.71 | ~380 ms | ≈ 4.5 % | success frame settle — *planned* |
+| S4 | `zoomIn` | 1 | 200 | 16.97 | 0.60 | ~420 ms | ≈ 9 % | `lock.zoomIn` scale ✅ |
+| S5 | `ringContract` | 1 | 260 | 25.80 | 0.80 | ~360 ms | ≈ 1.5 % | `lock.ringContract` radius — *planned* |
+| S6 | `bracketCollapse` | 1 | 300 | 24.25 | 0.70 | ~300 ms | ≈ 5 % | `lock.bracketCollapse` inset — *planned* |
+| S7 | `pulseLock` | 1 | 320 | 30.00 | 0.84 | ~280 ms | ≈ 2 % | `lock.glitchLock` variant — *planned* |
+| S8 | `glitchLock` | 1 | 420 | 21.00 | 0.51 | ~520 ms | ≈ 18 % | `lock.glitchLock` (intentionally bouncy) — *planned* |
+| **R1** | `resetSpring` | 1 | 260 | 32.25 | 1.00 | ~300 ms | 0 % | T7 return to the default area ✅ |
+| **RX** | `reducedSpring` | 1 | 2600 | 102.0 | 1.00 | ~60 ms | 0 % | every spring under reduce-motion ✅ |
+
+Rows marked ✅ exist in `ScanFxMotion` today; the *planned* rows are filled in by the
+Phase 4 lock styles that use them and are listed here so the numbers are frozen
+before those styles are written. `QrScanFxTheme.lockSpring` is the public entry
+point — it resolves reduce-motion first, then the style, so a style can never
+quietly opt back out of a reduced spring.
 
 `R1` is critically damped on purpose: returning to the scan area is a *reset*, and
 an overshoot there reads as an error rather than as momentum. `RX` is the
@@ -161,13 +167,20 @@ Non-spring motions:
 | N2 | `confetti` | linear velocity + `g = 1400 px/s²`, landing at t=0.45 of the burst |
 | N3 | `glitchJump` | 3 stepped offsets (6/0/−4 px) with 40 ms holds + 2 alpha dropouts |
 
-**P1 — lock pulse:** scale 1 → 1.06 → 1.0 via S7, plus an expanding ring from the
-locked quad: r 0.5·minSide → 1.15·minSide, alpha 0.60 → 0, 400 ms `easeOutQuint`.
+**P1 — lock pulse:** an expanding ring from the locked quad — r 0.5·minSide →
+1.15·minSide, alpha 0.60 → 0 — driven by the director's single `pulse` value, a
+**timed** `0..1` progress of `lockConverge` (220 ms, `easeOutQuint` at the layer).
+It is deliberately not a spring: layers ease the progress themselves and stop
+drawing the moment it reaches `1`, which is what makes the ring free once it has
+landed. A sprung progress would overshoot past `1`, blink the ring off during the
+overshoot and need clamping at every read site.
 
 **Spring seeding rule:** every spring re-target is seeded from the *current* value
-and *current* velocity. `ScanFxMotionValue.fromSpring(desc, initialValue, initialVelocity)`
-then `animateWith(controller)`. This is what makes a mid-flight `lockOn()` during
-`detected` feel continuous instead of snapping.
+and *current* velocity, achieved by re-pointing a `ScanFxSpringValue`'s
+`SpringDescription` at the new target (`animateTo`) — the underlying
+`SpringSimulation` is re-created from the live value and velocity, which is what
+makes a mid-flight `lockOn()` during `detected` feel continuous instead of
+snapping. `ScanFxSpringValue` is allocation-free once constructed.
 
 ---
 
