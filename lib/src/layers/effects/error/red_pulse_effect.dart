@@ -11,7 +11,7 @@ import '../scan_effect_layer.dart';
 /// The pulse count comes from [ScanErrorOptions.pulseCount], and the envelope is
 /// multiplied by `1 - burst` so the final pulse always lands back at rest
 /// instead of being cut off mid-flash.
-class RedPulseEffect extends ScanEffectLayer {
+class RedPulseEffect extends ScanFaultEffect {
   /// Creates the style.
   RedPulseEffect();
 

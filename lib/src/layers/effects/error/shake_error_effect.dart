@@ -16,7 +16,7 @@ import '../scan_effect_layer.dart';
 /// On an [ScanFxState.invalid] code the geometry never shakes (an unreadable
 /// code rattling the screen would be a lie), so this degrades to a single soft
 /// flare in the invalid colour.
-class ShakeErrorEffect extends ScanEffectLayer {
+class ShakeErrorEffect extends ScanFaultEffect {
   /// Creates the style.
   ShakeErrorEffect();
 

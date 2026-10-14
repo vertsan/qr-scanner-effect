@@ -9,7 +9,7 @@ import '../scan_effect_layer.dart';
 ///
 /// The widest success style. The stroke widens as the bloom decays, so the light
 /// appears to spread and dissipate rather than simply fade.
-class GlowFlashEffect extends ScanEffectLayer {
+class GlowFlashEffect extends ScanSuccessEffect {
   /// Creates the style.
   GlowFlashEffect();
 

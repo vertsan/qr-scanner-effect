@@ -11,7 +11,7 @@ import '../scan_effect_layer.dart';
 /// The most restrained fault style, and the one banking mode uses: the frame
 /// itself never moves, the overlay simply blinks twice and settles. It is also
 /// the safest choice for hosts whose scan area sits over important UI.
-class FadeBlinkEffect extends ScanEffectLayer {
+class FadeBlinkEffect extends ScanFaultEffect {
   /// Creates the style.
   FadeBlinkEffect();
 

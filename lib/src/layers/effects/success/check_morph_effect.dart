@@ -15,7 +15,7 @@ import '../scan_effect_layer.dart';
 ///
 /// Under reduce-motion the mark is simply already drawn: the *result* of the
 /// effect is the check mark, and skipping the motion keeps that result.
-class CheckMorphEffect extends ScanEffectLayer {
+class CheckMorphEffect extends ScanSuccessEffect {
   /// Creates the style.
   CheckMorphEffect();
 

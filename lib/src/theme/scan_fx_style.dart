@@ -91,6 +91,15 @@ enum ScanSuccessStyle {
   /// A bloom pulse around the locked quad.
   glowFlash,
 
+  /// Concentric waves that expand out from the frame and fade.
+  rippleWaves,
+
+  /// A short-lived burst of paper particles from the frame.
+  ///
+  /// The liveliest style. It is the one style banking mode must never use: see
+  /// [QrScanFxTheme.bankingBlue].
+  confetti,
+
   /// No visual; hosts can still use haptics.
   none,
 }
@@ -105,6 +114,9 @@ enum ScanErrorStyle {
 
   /// A gentle alpha blink.
   fadeBlink,
+
+  /// A digital glitch: a few stepped, brightly tinted copies of the frame.
+  glitch,
 
   /// No visual.
   none,
@@ -142,7 +154,16 @@ enum ScanLayerKind {
   /// The lock-on reticle flourish.
   reticle,
 
-  /// Success and error effects.
+  /// The success burst.
+  success,
+
+  /// The fault burst, shared by the `error` and `invalid` states.
+  error,
+
+  /// A generic effects slot.
+  ///
+  /// The default kind for a [CustomScanLayer], so a host-supplied painter lands
+  /// in the burst region without having to claim one of the specific slots.
   effects,
 
   /// Host-facing hint text.
@@ -320,17 +341,32 @@ class ScanSuccessOptions {
   /// Creates success options.
   const ScanSuccessOptions({
     this.checkStrokeWidth = 5,
+    this.rippleWaves = 3,
+    this.particleCount = 22,
   });
 
   /// Stroke width of the check mark.
   final double checkStrokeWidth;
 
+  /// How many expanding waves [ScanSuccessStyle.rippleWaves] draws.
+  final int rippleWaves;
+
+  /// How many particles [ScanSuccessStyle.confetti] releases.
+  ///
+  /// The particles are laid out from a fixed table at construction, so this is
+  /// the only knob: raising it costs draw calls, never allocation per frame.
+  final int particleCount;
+
   /// Copy with overrides.
   ScanSuccessOptions copyWith({
     double? checkStrokeWidth,
+    int? rippleWaves,
+    int? particleCount,
   }) =>
       ScanSuccessOptions(
         checkStrokeWidth: checkStrokeWidth ?? this.checkStrokeWidth,
+        rippleWaves: rippleWaves ?? this.rippleWaves,
+        particleCount: particleCount ?? this.particleCount,
       );
 
   /// Interpolates between two option sets.
@@ -341,14 +377,20 @@ class ScanSuccessOptions {
   ) =>
       ScanSuccessOptions(
         checkStrokeWidth: _lerp(a.checkStrokeWidth, b.checkStrokeWidth, t),
+        rippleWaves: t < 0.5 ? a.rippleWaves : b.rippleWaves,
+        particleCount: t < 0.5 ? a.particleCount : b.particleCount,
       );
 
   @override
   bool operator ==(Object other) =>
-      other is ScanSuccessOptions && other.checkStrokeWidth == checkStrokeWidth;
+      other is ScanSuccessOptions &&
+      other.checkStrokeWidth == checkStrokeWidth &&
+      other.rippleWaves == rippleWaves &&
+      other.particleCount == particleCount;
 
   @override
-  int get hashCode => checkStrokeWidth.hashCode;
+  int get hashCode =>
+      Object.hash(checkStrokeWidth, rippleWaves, particleCount);
 }
 
 /// Tunables for the error effect.

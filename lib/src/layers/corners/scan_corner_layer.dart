@@ -60,34 +60,26 @@ abstract class ScanCornerLayer extends ScanLayer {
 
   /// Corner [index] of [quad] (`0` is the top-left of the ring).
   @protected
-  static Offset cornerOf(ScanFxQuad quad, int index) => switch (index) {
-        0 => quad.topLeft,
-        1 => quad.topRight,
-        2 => quad.bottomRight,
-        _ => quad.bottomLeft,
-      };
+  static Offset cornerOf(ScanFxQuad quad, int index) =>
+      ScanFxShapes.quadCorner(quad, index);
 
   /// The origin of the bracket for corner [index], pulled [inset] px towards the
   /// frame centre.
   @protected
-  static Offset bracketOrigin(ScanFxQuad quad, int index, double inset) {
-    final corner = cornerOf(quad, index);
-    final toCenter = quad.center - corner;
-    final distance = toCenter.distance;
-    if (distance < 1e-6) return corner;
-    return corner + toCenter / distance * inset;
-  }
+  static Offset bracketOrigin(ScanFxQuad quad, int index, double inset) =>
+      ScanFxShapes.insetQuadCorner(quad, index, inset);
 
   /// The unit vector from [from] towards [to].
   @protected
-  static Offset unit(Offset from, Offset to) {
-    final delta = to - from;
-    final length = delta.distance;
-    return length < 1e-6 ? Offset.zero : delta / length;
-  }
+  static Offset unit(Offset from, Offset to) =>
+      ScanFxShapes.unitVector(from, to);
 
-  /// The four brackets as a single stroked path, rebuilt only when the quad,
-  /// the arm length or the inset actually changed.
+  /// The four brackets as a single stroked path.
+  ///
+  /// The path is reused across frames and rebuilt in place with [Path.reset],
+  /// so the focus morph — which moves the quad on every frame — stays
+  /// allocation-free. It is only rebuilt when the quad, the arm length or the
+  /// inset actually changed.
   @protected
   Path bracketPath(ScanFxFrame frame) {
     final quad = frame.quad;
@@ -99,18 +91,9 @@ abstract class ScanCornerLayer extends ScanLayer {
         _pathInset == inset) {
       return _path!;
     }
-    final path = Path();
-    for (var i = 0; i < 4; i++) {
-      final origin = bracketOrigin(quad, i, inset);
-      ScanFxShapes.addCornerArms(
-        path,
-        origin,
-        unit(origin, cornerOf(quad, (i + 3) % 4)),
-        unit(origin, cornerOf(quad, (i + 1) % 4)),
-        arm,
-      );
-    }
-    _path = path;
+    final path = _path ??= Path();
+    path.reset();
+    ScanFxShapes.addQuadCornerArms(path, quad, inset, arm);
     _pathQuad = quad;
     _pathArm = arm;
     _pathInset = inset;

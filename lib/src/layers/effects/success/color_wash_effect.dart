@@ -9,7 +9,7 @@ import '../scan_effect_layer.dart';
 ///
 /// The calmest success style, and the one banking mode uses: no confetti, no
 /// particles, just the frame acknowledging the read.
-class ColorWashEffect extends ScanEffectLayer {
+class ColorWashEffect extends ScanSuccessEffect {
   /// Creates the style.
   ColorWashEffect();
 

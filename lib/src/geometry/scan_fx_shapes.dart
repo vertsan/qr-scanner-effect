@@ -163,6 +163,59 @@ class ScanFxShapes {
         corner.dx + outgoing.dx * length, corner.dy + outgoing.dy * length);
   }
 
+  /// Corner [index] of [quad], in `topLeft, topRight, bottomRight, bottomLeft`
+  /// order (the ring order every layer uses).
+  static Offset quadCorner(ScanFxQuad quad, int index) => switch (index) {
+        0 => quad.topLeft,
+        1 => quad.topRight,
+        2 => quad.bottomRight,
+        _ => quad.bottomLeft,
+      };
+
+  /// The unit vector from [from] towards [to], or [Offset.zero] when the two
+  /// points coincide.
+  static Offset unitVector(Offset from, Offset to) {
+    final delta = to - from;
+    final length = delta.distance;
+    return length < 1e-6 ? Offset.zero : delta / length;
+  }
+
+  /// The point [inset] logical pixels from corner [index] of [quad] towards the
+  /// quad's centre.
+  ///
+  /// A **negative** [inset] pushes the point outwards instead, which is how the
+  /// focus brackets start outside the scan area and converge onto it. The offset
+  /// follows the corner's own bisector, so it stays visually even on a rotated
+  /// or perspective-skewed quad.
+  static Offset insetQuadCorner(ScanFxQuad quad, int index, double inset) {
+    final corner = quadCorner(quad, index);
+    final towardsCenter = unitVector(corner, quad.center);
+    return corner + towardsCenter * inset;
+  }
+
+  /// Adds the four corner brackets of [quad] to [path].
+  ///
+  /// Each bracket is placed at [inset] from its corner and grows [length] along
+  /// both adjacent edges, which is the shared geometry behind the corner layer
+  /// and the lock-on focus reticle.
+  static void addQuadCornerArms(
+    Path path,
+    ScanFxQuad quad,
+    double inset,
+    double length,
+  ) {
+    for (var i = 0; i < 4; i++) {
+      final origin = insetQuadCorner(quad, i, inset);
+      addCornerArms(
+        path,
+        origin,
+        unitVector(origin, quadCorner(quad, (i + 3) % 4)),
+        unitVector(origin, quadCorner(quad, (i + 1) % 4)),
+        length,
+      );
+    }
+  }
+
   /// Clamps [radius] so it can never exceed half of the smaller side.
   static double clampRadius(double radius, Size size) => math.max(
         0,
