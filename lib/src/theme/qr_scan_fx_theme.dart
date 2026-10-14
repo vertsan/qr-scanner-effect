@@ -139,7 +139,7 @@ class QrScanFxTheme extends ThemeExtension<QrScanFxTheme> {
       glow: 0.4,
     ),
     lock: ScanLockOptions(padding: 14, cornerFollow: 0.85, pulseStrength: 0.28),
-    success: ScanSuccessOptions(rippleWaves: 1, particleCount: 0),
+    success: ScanSuccessOptions(checkStrokeWidth: 4.5),
     error: ScanErrorOptions(shakeAmplitude: 0, pulseCount: 2),
     motion: ScanFxMotion.banking,
     labels: ScanFxSemanticsLabels(
@@ -376,10 +376,22 @@ class QrScanFxTheme extends ThemeExtension<QrScanFxTheme> {
   final ScanFxTunables tunables;
 
   /// The style used for host-facing overlay text.
+  ///
+  /// This carries the typography only. The colour is applied from
+  /// [hintTextColor] by [resolvedHintStyle], so a host can recolour the hint with
+  /// one field instead of rebuilding a `TextStyle`.
   final TextStyle hintTextStyle;
 
   /// Screen-reader strings.
   final ScanFxSemanticsLabels labels;
+
+  /// The hint text style actually painted.
+  ///
+  /// Merges [hintTextStyle] with [hintTextColor], which is what lets a preset
+  /// declare its hint colour once and have it apply to every text attribute it
+  /// did not override.
+  TextStyle get resolvedHintStyle =>
+      hintTextStyle.copyWith(color: hintTextColor);
 
   /// The corner radius after applying any tunable override.
   double get resolvedCornerRadius => tunables.cornerRadius ?? cornerRadius;

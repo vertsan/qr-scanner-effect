@@ -228,7 +228,7 @@ class ScanFxMotion {
       other.shakeDecay == shakeDecay;
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll(<Object?>[
         start,
         lockHold,
         lockConverge,
@@ -251,7 +251,7 @@ class ScanFxMotion {
         reduceMotion,
         shakeCycles,
         shakeDecay,
-      );
+      ]);
 }
 
 /// The easing vocabulary used by the overlay, named for readability at call

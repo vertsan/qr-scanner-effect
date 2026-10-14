@@ -185,6 +185,9 @@ class QrScanFxController extends ChangeNotifier
   /// Attaches the animation core. Called by the overlay widget.
   void attachDirector(ScanFxDirector director) {
     _director = director;
+    // A target may have arrived before the overlay was built (a detection
+    // callback can fire before the first layout), so replay it.
+    if (_target != null) director.onTargetChanged(_target);
     if (director.isPaused != _paused.value) {
       _paused.value = director.isPaused;
     }

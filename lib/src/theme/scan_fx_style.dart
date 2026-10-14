@@ -193,7 +193,6 @@ class ScanBeamOptions {
     this.thickness = 3,
     this.trail = 0.28,
     this.glow = 0.65,
-    this.curve,
   });
 
   /// Which way the beam travels.
@@ -214,9 +213,6 @@ class ScanBeamOptions {
   /// Bloom strength, `0..1`.
   final double glow;
 
-  /// Reserved for hosts that want to shape the head's easing explicitly.
-  final double? curve;
-
   /// Copy with overrides.
   ScanBeamOptions copyWith({
     ScanBeamDirection? direction,
@@ -225,7 +221,6 @@ class ScanBeamOptions {
     double? thickness,
     double? trail,
     double? glow,
-    double? curve,
   }) =>
       ScanBeamOptions(
         direction: direction ?? this.direction,
@@ -234,7 +229,6 @@ class ScanBeamOptions {
         thickness: thickness ?? this.thickness,
         trail: trail ?? this.trail,
         glow: glow ?? this.glow,
-        curve: curve ?? this.curve,
       );
 
   /// Interpolates between two option sets.
@@ -246,7 +240,6 @@ class ScanBeamOptions {
         thickness: _lerp(a.thickness, b.thickness, t),
         trail: _lerp(a.trail, b.trail, t),
         glow: _lerp(a.glow, b.glow, t),
-        curve: t < 0.5 ? a.curve : b.curve,
       );
 
   @override
@@ -257,8 +250,7 @@ class ScanBeamOptions {
       other.period == period &&
       other.thickness == thickness &&
       other.trail == trail &&
-      other.glow == glow &&
-      other.curve == curve;
+      other.glow == glow;
 
   @override
   int get hashCode => Object.hash(
@@ -268,7 +260,6 @@ class ScanBeamOptions {
         thickness,
         trail,
         glow,
-        curve,
       );
 }
 
@@ -280,7 +271,6 @@ class ScanLockOptions {
     this.padding = 12,
     this.cornerFollow = 1,
     this.pulseStrength = 0.5,
-    this.latch = true,
   });
 
   /// Extra margin around the detected target, in logical pixels.
@@ -293,21 +283,16 @@ class ScanLockOptions {
   /// Strength of the lock-on pulse ring, `0..1`.
   final double pulseStrength;
 
-  /// Whether the detected target is held after the beam stops.
-  final bool latch;
-
   /// Copy with overrides.
   ScanLockOptions copyWith({
     double? padding,
     double? cornerFollow,
     double? pulseStrength,
-    bool? latch,
   }) =>
       ScanLockOptions(
         padding: padding ?? this.padding,
         cornerFollow: cornerFollow ?? this.cornerFollow,
         pulseStrength: pulseStrength ?? this.pulseStrength,
-        latch: latch ?? this.latch,
       );
 
   /// Interpolates between two option sets.
@@ -316,7 +301,6 @@ class ScanLockOptions {
         padding: _lerp(a.padding, b.padding, t),
         cornerFollow: _lerp(a.cornerFollow, b.cornerFollow, t),
         pulseStrength: _lerp(a.pulseStrength, b.pulseStrength, t),
-        latch: t < 0.5 ? a.latch : b.latch,
       );
 
   @override
@@ -324,11 +308,10 @@ class ScanLockOptions {
       other is ScanLockOptions &&
       other.padding == padding &&
       other.cornerFollow == cornerFollow &&
-      other.pulseStrength == pulseStrength &&
-      other.latch == latch;
+      other.pulseStrength == pulseStrength;
 
   @override
-  int get hashCode => Object.hash(padding, cornerFollow, pulseStrength, latch);
+  int get hashCode => Object.hash(padding, cornerFollow, pulseStrength);
 }
 
 /// Tunables for the success effect.
@@ -336,29 +319,17 @@ class ScanLockOptions {
 class ScanSuccessOptions {
   /// Creates success options.
   const ScanSuccessOptions({
-    this.rippleWaves = 2,
-    this.particleCount = 12,
     this.checkStrokeWidth = 5,
   });
-
-  /// How many expanding rings the ripple burst draws.
-  final int rippleWaves;
-
-  /// How many confetti pieces a particle burst draws.
-  final int particleCount;
 
   /// Stroke width of the check mark.
   final double checkStrokeWidth;
 
   /// Copy with overrides.
   ScanSuccessOptions copyWith({
-    int? rippleWaves,
-    int? particleCount,
     double? checkStrokeWidth,
   }) =>
       ScanSuccessOptions(
-        rippleWaves: rippleWaves ?? this.rippleWaves,
-        particleCount: particleCount ?? this.particleCount,
         checkStrokeWidth: checkStrokeWidth ?? this.checkStrokeWidth,
       );
 
@@ -369,20 +340,16 @@ class ScanSuccessOptions {
     double t,
   ) =>
       ScanSuccessOptions(
-        rippleWaves: t < 0.5 ? a.rippleWaves : b.rippleWaves,
-        particleCount: t < 0.5 ? a.particleCount : b.particleCount,
         checkStrokeWidth: _lerp(a.checkStrokeWidth, b.checkStrokeWidth, t),
       );
 
   @override
   bool operator ==(Object other) =>
       other is ScanSuccessOptions &&
-      other.rippleWaves == rippleWaves &&
-      other.particleCount == particleCount &&
       other.checkStrokeWidth == checkStrokeWidth;
 
   @override
-  int get hashCode => Object.hash(rippleWaves, particleCount, checkStrokeWidth);
+  int get hashCode => checkStrokeWidth.hashCode;
 }
 
 /// Tunables for the error effect.

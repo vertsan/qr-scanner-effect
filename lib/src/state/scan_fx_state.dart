@@ -49,4 +49,11 @@ enum ScanFxState {
       this == ScanFxState.idle ||
       this == ScanFxState.scanning ||
       this == ScanFxState.detected;
+
+  /// Whether the host-facing hint belongs on screen in this state.
+  ///
+  /// The hint is a prompt to *find* a code, so it disappears the moment one is
+  /// detected and never competes with a result.
+  bool get showsHint =>
+      this == ScanFxState.idle || this == ScanFxState.scanning;
 }

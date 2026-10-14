@@ -67,10 +67,12 @@ class ScanLayerStack {
     return false;
   }
 
-  /// Whether any layer wants to render a widget-level effect.
+  /// Whether any layer in the stack wants a widget-level hook at all.
   bool get wantsWidget {
     for (final entry in entries) {
-      if (entry.visible && entry.layer.wantsWidget) return true;
+      if (entry.visible && (entry.layer.wantsWidget || entry.layer.wantsOverlay)) {
+        return true;
+      }
     }
     return false;
   }
@@ -149,12 +151,25 @@ class ScanLayerStack {
     return ScanLayerStack(list);
   }
 
-  /// Builds every widget-level effect in paint order.
-  List<Widget> buildEffects(BuildContext context, ScanFxFrame frame) {
+  /// Builds every widget-level effect that renders *under* the painter, in paint
+  /// order.
+  List<Widget> buildUnderlays(BuildContext context, ScanFxFrame frame) {
     final widgets = <Widget>[];
     for (final entry in entries) {
       if (!entry.visible) continue;
       final widget = entry.layer.buildEffect(context, frame);
+      if (widget != null) widgets.add(widget);
+    }
+    return widgets;
+  }
+
+  /// Builds every widget-level element that renders *above* the painter, in
+  /// paint order.
+  List<Widget> buildOverlays(BuildContext context, ScanFxFrame frame) {
+    final widgets = <Widget>[];
+    for (final entry in entries) {
+      if (!entry.visible) continue;
+      final widget = entry.layer.buildOverlay(context, frame);
       if (widget != null) widgets.add(widget);
     }
     return widgets;

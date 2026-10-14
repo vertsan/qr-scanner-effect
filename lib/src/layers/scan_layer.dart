@@ -41,11 +41,14 @@ abstract class ScanLayer {
   /// animated values would freeze.
   bool get animated => true;
 
-  /// Whether this layer returns a widget from [buildEffect].
+  /// Whether this layer returns a widget from [buildEffect] or [buildOverlay].
   ///
   /// Declared explicitly (rather than probed) so the overlay can decide whether
-  /// it needs a widget-level effect stack without calling [buildEffect].
+  /// it needs a widget-level effect stack without calling either hook.
   bool get wantsWidget => false;
+
+  /// Whether this layer returns a widget from [buildOverlay].
+  bool get wantsOverlay => false;
 
   /// Draws the layer.
   ///
@@ -56,11 +59,20 @@ abstract class ScanLayer {
 
   /// An optional widget rendered *under* the painter.
   ///
-  /// This exists because a genuine frosted backdrop needs
-  /// [BackdropFilter], which is a widget-level effect that cannot be expressed
-  /// as canvas calls. Only backdrop layers use it, and returning `null` (the
-  /// default) keeps the overlay a single `CustomPaint`.
+  /// This exists because a genuine frosted backdrop needs [BackdropFilter],
+  /// which is a widget-level effect that cannot be expressed as canvas calls.
+  /// Only backdrop layers use it, and returning `null` (the default) keeps the
+  /// overlay a single `CustomPaint` plus whatever widgets it genuinely needs.
   Widget? buildEffect(BuildContext context, ScanFxFrame frame) => null;
+
+  /// An optional widget rendered *above* the painter.
+  ///
+  /// The counterpart to [buildEffect]: this one draws on top of the frame and
+  /// every effect, which is where host-facing chrome such as the idle hint or a
+  /// banking-mode confirmation lives. It is called on state changes rather than
+  /// on every tick, so an implementation that needs smooth motion should use
+  /// Flutter's implicit animations.
+  Widget? buildOverlay(BuildContext context, ScanFxFrame frame) => null;
 }
 
 /// Wraps a host-supplied [CustomPainter] so it can be dropped into the stack.

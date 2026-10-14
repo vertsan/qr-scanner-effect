@@ -1,0 +1,28 @@
+name: qr_scan_fx
+description: >-
+  Premium, canvas-drawn QR scanner overlay for Flutter: focus frames, corner
+  brackets, scan beams, spring lock-on, success effects, banking mode.
+version: 0.1.0
+repository: https://github.com/qr-scan-fx/qr_scan_fx
+issue_tracker: https://github.com/qr-scan-fx/qr_scan_fx/issues
+topics:
+  - qr
+  - scanner
+  - animation
+  - ui
+  - camera
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:

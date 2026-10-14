@@ -197,6 +197,10 @@ class ScanFxDirector extends ChangeNotifier {
     if (size != _size) {
       _size = size;
       _defaultQuad = null;
+      // The overlay may have had no size at all when the target arrived (the
+      // controller is often driven from a detection callback that fires before
+      // the first layout), so the locked quad has to be re-mapped here too.
+      _rebuildLockedQuad();
       changed = true;
     }
     if (scanAreaSize != _scanAreaSize) {

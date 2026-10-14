@@ -96,14 +96,17 @@ class ScanFxStateMachine {
             : null;
       case ScanFxTrigger.targetDetected:
         return switch (from) {
-          ScanFxState.scanning ||
-          ScanFxState.detected ||
-          ScanFxState.locked ||
+          ScanFxState.idle || ScanFxState.scanning => ScanFxState.detected,
+          // A repeat detection while already tracking only refreshes geometry.
+          // It must *not* restart the hold timer, because a detector that fires
+          // thirty times a second would then never let `detected` settle into
+          // `locked` and the lock-on animation would never complete.
+          ScanFxState.detected || ScanFxState.locked => from,
+          // A fresh target after a burst starts the cycle over.
           ScanFxState.success ||
           ScanFxState.error ||
           ScanFxState.invalid =>
             ScanFxState.detected,
-          ScanFxState.idle => ScanFxState.detected,
         };
       case ScanFxTrigger.lockHoldElapsed:
         if (from != ScanFxState.detected || !autoLock) return null;
