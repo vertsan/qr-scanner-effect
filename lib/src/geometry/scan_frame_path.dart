@@ -75,26 +75,35 @@ abstract final class ScanFramePath {
 
   /// A dashed version of [source], with dashes of [dash] separated by [gap].
   ///
-  /// Walks the path's metrics, which is the only way to dash an arbitrarily
-  /// curved or rotated outline without approximating it. Callers cache the
-  /// result: this allocates, so it never belongs in a `paint` fast path.
+  /// [offset] slides the pattern along the path, which is how a dashed border
+  /// marches. Walks the path's metrics, which is the only way to dash an
+  /// arbitrarily curved or rotated outline without approximating it. Callers
+  /// cache the result: this allocates, so it never belongs in a `paint` fast
+  /// path.
   static Path dashed(
     Path source, {
     required double dash,
     required double gap,
+    double offset = 0,
   }) {
     final out = Path();
     final period = dash + gap;
     if (period <= 0) return out;
     for (final metric in source.computeMetrics()) {
       final length = metric.length;
-      var distance = 0.0;
+      // Walk backwards from `offset` so a negative offset still produces a dash
+      // that straddles the path start.
+      final first = offset % period;
+      var distance = first > 0 ? first - period : first;
       while (distance < length) {
+        final start = distance < 0 ? 0.0 : distance;
         final end = distance + dash;
-        out.addPath(
-          metric.extractPath(distance, end > length ? length : end),
-          Offset.zero,
-        );
+        if (end > 0 && start < length) {
+          out.addPath(
+            metric.extractPath(start, end > length ? length : end),
+            Offset.zero,
+          );
+        }
         distance += period;
       }
     }
