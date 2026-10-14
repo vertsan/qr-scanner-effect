@@ -139,6 +139,38 @@ class ScanFxShapes {
   /// A closed polyline through the quad's corners.
   static Path sharpQuad(ScanFxQuad quad) => polyline(quad.points);
 
+  /// The point at [u], [v] of the unit square mapped onto [quad].
+  ///
+  /// Bilinear interpolation, so the point honours the quad's rotation *and* its
+  /// perspective skew: `u` runs along the top and bottom edges, `v` down the left
+  /// and right ones. Values outside `0..1` extrapolate, which is what lets a
+  /// caller place a marker just outside the scan area.
+  static Offset quadPoint(ScanFxQuad quad, double u, double v) =>
+      quad.topLeft +
+      (quad.topRight - quad.topLeft) * u +
+      (quad.bottomLeft - quad.topLeft) * v +
+      (quad.topLeft - quad.topRight - quad.bottomLeft + quad.bottomRight) * u * v;
+
+  /// A closed polygon whose vertices are [unitPoints] mapped onto [quad].
+  ///
+  /// This is how a hexagon or diamond follows a rotated code without a line of
+  /// trigonometry: describe the shape once in `0..1` space and let the quad do
+  /// the rest.
+  static Path quadPolygon(ScanFxQuad quad, List<Offset> unitPoints) {
+    if (unitPoints.length < 3) return Path();
+    final path = Path();
+    for (var i = 0; i < unitPoints.length; i++) {
+      final p = quadPoint(quad, unitPoints[i].dx, unitPoints[i].dy);
+      if (i == 0) {
+        path.moveTo(p.dx, p.dy);
+      } else {
+        path.lineTo(p.dx, p.dy);
+      }
+    }
+    path.close();
+    return path;
+  }
+
   static Offset _unit(Offset from, Offset to) {
     final delta = to - from;
     final length = delta.distance;

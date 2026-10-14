@@ -21,6 +21,21 @@ enum ScanFrameShape {
 
   /// No frame outline; only corner brackets are drawn.
   cornersOnly,
+
+  /// A flat-topped hexagon inscribed in the scan area.
+  hexagon,
+
+  /// A diamond touching the four edge midpoints.
+  diamond,
+
+  /// A straight-edged border with no rounding.
+  fullBorder,
+
+  /// A dashed rounded rectangle. The dashes march while scanning.
+  dashedBorder,
+
+  /// A rounded rectangle with tick marks at the four edge midpoints.
+  viewfinderCross,
 }
 
 /// How each corner bracket is drawn.
@@ -33,6 +48,21 @@ enum ScanCornerStyle {
 
   /// A filled dot at each corner.
   dot,
+
+  /// Arms joined by a bevel across the corner.
+  chamfered,
+
+  /// A short filled capsule aligned with the corner's bisector.
+  pill,
+
+  /// Two concentric arms per edge.
+  doubleLine,
+
+  /// Arms with a forced wide bloom.
+  glowing,
+
+  /// Arms that draw themselves on as the lock settles.
+  animatedDraw,
 }
 
 /// How the beam crossing the scan area is drawn.
@@ -45,6 +75,30 @@ enum ScanBeamStyle {
 
   /// A bright line with a strong bloom.
   glowingLaser,
+
+  /// Two parallel glowing lines.
+  doubleLaser,
+
+  /// A rotating sweep with a trailing wedge, from the centre outwards.
+  radar,
+
+  /// A lattice of lines with a highlight travelling along the head.
+  gridScan,
+
+  /// A grid of dots lit by the passing head.
+  dotMatrix,
+
+  /// A travelling sine wave.
+  waveform,
+
+  /// Concentric rings expanding from the head.
+  pulseRings,
+
+  /// A soft multi-band colour wash that drifts across the frame.
+  aurora,
+
+  /// No beam.
+  none,
 }
 
 /// How the area outside the scan target is treated.
@@ -61,6 +115,9 @@ enum ScanBackdropStyle {
   /// A linear gradient fade from one side.
   gradientFade,
 
+  /// A radial spotlight that brightens the scan area and darkens the surround.
+  spotlight,
+
   /// No backdrop at all — the camera preview is untouched.
   none,
 }
@@ -75,6 +132,21 @@ enum ScanLockStyle {
 
   /// Springs the scale up from a slightly smaller quad.
   zoomIn,
+
+  /// No focus flourish; the confirmation ring alone acknowledges the lock.
+  pulseLock,
+
+  /// A ring that starts wide and contracts onto the frame.
+  ringContract,
+
+  /// A line that sweeps across the target and fades.
+  scanlineSweepOver,
+
+  /// Particles that fly in towards the corners and vanish on arrival.
+  particleBurst,
+
+  /// A glitched echo of the frame that settles into place.
+  glitchLock,
 
   /// Lock-on geometry still animates, but no reticle flourish is drawn.
   none,
@@ -100,6 +172,9 @@ enum ScanSuccessStyle {
   /// [QrScanFxTheme.bankingBlue].
   confetti,
 
+  /// The corner brackets flash on and off twice.
+  cornersFlash,
+
   /// No visual; hosts can still use haptics.
   none,
 }
@@ -117,6 +192,9 @@ enum ScanErrorStyle {
 
   /// A digital glitch: a few stepped, brightly tinted copies of the frame.
   glitch,
+
+  /// A cross that draws itself across the frame.
+  crossMorph,
 
   /// No visual.
   none,

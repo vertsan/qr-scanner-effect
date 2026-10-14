@@ -11,6 +11,7 @@ import '../controller/qr_scan_fx_controller.dart';
 import '../geometry/scan_fx_quad.dart';
 import '../geometry/scan_fx_target.dart';
 import '../geometry/scan_geometry_mapper.dart';
+import '../layers/frame/scan_frame_layer.dart';
 import '../layers/idle/scan_fx_idle_modifier.dart';
 import '../layers/scan_fx_registry.dart';
 import '../layers/scan_layer_stack.dart';
@@ -278,6 +279,7 @@ class ScanFxDirector extends ChangeNotifier {
       size: _size,
       state: controller.value,
       theme: theme,
+      frameShape: _resolvedFrameShape(theme.frameShape),
       ambientSeconds: _ambientSeconds,
       focus: _focus.value.clamp(0.0, 1.0),
       focusRaw: _focus.value,
@@ -299,6 +301,13 @@ class ScanFxDirector extends ChangeNotifier {
       textDirection: _textDirection,
       revision: _revision,
     );
+  }
+
+  /// The outline the frame layer is drawing, falling back to the theme's
+  /// [fallback] when the frame slot has been replaced by a non-frame layer.
+  ScanFrameShape _resolvedFrameShape(ScanFrameShape fallback) {
+    final frame = _stack.find(ScanLayerKind.frame);
+    return frame is ScanFrameLayer ? frame.shape : fallback;
   }
 
   /// The shake displacement for the current state and style.

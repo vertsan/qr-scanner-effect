@@ -22,6 +22,7 @@ class ScanFxFrame {
     required this.size,
     required this.state,
     required this.theme,
+    required this.frameShape,
     required this.ambientSeconds,
     required this.focus,
     required this.focusRaw,
@@ -52,6 +53,14 @@ class ScanFxFrame {
 
   /// The resolved theme, including live tunables.
   final QrScanFxTheme theme;
+
+  /// The outline the frame layer is actually drawing.
+  ///
+  /// Normally this equals `theme.frameShape`, but it is resolved from the frame
+  /// layer itself so that a host who replaces the frame layer with a different
+  /// shape still gets a backdrop cutout (and effect outline) that matches what is
+  /// on screen.
+  final ScanFrameShape frameShape;
 
   /// Seconds of ambient time accumulated so far. Scaled by the speed
   /// multiplier, so ambient loops speed up with the rest of the motion spec.

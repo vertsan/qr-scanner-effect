@@ -1,7 +1,7 @@
-import 'dart:ui' show Canvas, Path, Size;
+import 'dart:ui' show Canvas, Size;
 
 import '../../animation/scan_fx_frame.dart';
-import '../../geometry/scan_fx_shapes.dart';
+import '../../theme/scan_fx_style.dart';
 import 'scan_frame_layer.dart';
 
 /// Draws no outline at all, leaving the corner brackets to describe the frame.
@@ -19,11 +19,10 @@ class CornersOnlyFrame extends ScanFrameLayer {
   CornersOnlyFrame();
 
   @override
-  bool get animated => false;
+  ScanFrameShape get shape => ScanFrameShape.cornersOnly;
 
   @override
-  Path buildOutline(ScanFxFrame frame) =>
-      ScanFxShapes.roundedQuad(frame.quad, frame.cornerRadius);
+  bool get animated => false;
 
   @override
   void paint(Canvas canvas, Size size, ScanFxFrame frame) {}

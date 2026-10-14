@@ -1,7 +1,4 @@
-import 'dart:ui' show Path;
-
-import '../../animation/scan_fx_frame.dart';
-import '../../geometry/scan_fx_shapes.dart';
+import '../../theme/scan_fx_style.dart';
 import 'scan_frame_layer.dart';
 
 /// A rounded rectangle that follows the target's rotation.
@@ -14,6 +11,5 @@ class RoundedSquareFrame extends ScanFrameLayer {
   RoundedSquareFrame();
 
   @override
-  Path buildOutline(ScanFxFrame frame) =>
-      ScanFxShapes.roundedQuad(frame.quad, frame.cornerRadius);
+  ScanFrameShape get shape => ScanFrameShape.roundedSquare;
 }

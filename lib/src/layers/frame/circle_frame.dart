@@ -1,7 +1,4 @@
-import 'dart:ui' show Path;
-
-import '../../animation/scan_fx_frame.dart';
-import '../../geometry/scan_fx_shapes.dart';
+import '../../theme/scan_fx_style.dart';
 import 'scan_frame_layer.dart';
 
 /// A circle inscribed in the scan area.
@@ -16,5 +13,5 @@ class CircleFrame extends ScanFrameLayer {
   CircleFrame();
 
   @override
-  Path buildOutline(ScanFxFrame frame) => ScanFxShapes.oval(frame.quad.bounds);
+  ScanFrameShape get shape => ScanFrameShape.circle;
 }

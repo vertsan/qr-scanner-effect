@@ -1,7 +1,4 @@
-import 'dart:ui' show Path;
-
-import '../../animation/scan_fx_frame.dart';
-import '../../geometry/scan_fx_shapes.dart';
+import '../../theme/scan_fx_style.dart';
 import 'scan_frame_layer.dart';
 
 /// The iOS-style continuous corner.
@@ -15,8 +12,5 @@ class SquircleFrame extends ScanFrameLayer {
   SquircleFrame();
 
   @override
-  Path buildOutline(ScanFxFrame frame) => ScanFxShapes.superellipse(
-        frame.quad.bounds,
-        exponent: frame.theme.squircleExponent,
-      );
+  ScanFrameShape get shape => ScanFrameShape.squircle;
 }

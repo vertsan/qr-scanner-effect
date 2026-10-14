@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import '../../animation/scan_fx_frame.dart';
+import '../../geometry/scan_frame_path.dart';
 import '../../geometry/scan_fx_quad.dart';
 import '../../theme/scan_fx_style.dart';
 import '../../theme/scan_fx_tunables.dart';
@@ -14,12 +15,22 @@ import '../scan_layer.dart';
 /// — and inherits the rest: bloom, the state tint, the reveal fade and the
 /// [ScanIdleStyle.shimmer] highlight. That is why a new frame shape is a
 /// ten-line class rather than a hundred-line painter.
+///
+/// A subclass declares [shape] and inherits the outline; only styles that draw
+/// something *in addition* to a plain outline (dashes, tick marks, a follow-spot)
+/// need to override [paint].
 abstract class ScanFrameLayer extends ScanLayer {
   /// Creates the base.
   ScanFrameLayer();
 
   @override
   ScanLayerKind get kind => ScanLayerKind.frame;
+
+  /// The outline this layer draws.
+  ///
+  /// Surfaced to the animation core so the backdrop cutout and the burst effects
+  /// follow whatever frame is on screen, even after a host replaces this layer.
+  ScanFrameShape get shape;
 
   late final ScanPaintCache _cache = ScanPaintCache();
 
@@ -28,6 +39,15 @@ abstract class ScanFrameLayer extends ScanLayer {
   double _outlineRadius = -1;
   double _outlineExponent = -1;
   ScanFrameShape? _outlineShape;
+  int _outlinePhase = 0;
+
+  /// An extra cache key for styles whose outline animates at a fixed rate.
+  ///
+  /// A static outline returns the default `0`; a marching style returns a small
+  /// integer that changes a handful of times per loop, which bounds how often the
+  /// outline is rebuilt instead of rebuilding it on every tick.
+  @protected
+  int outlinePhaseKey(ScanFxFrame frame) => 0;
 
   /// The outline path for [frame], rebuilt only when the geometry changed.
   ///
@@ -37,13 +57,14 @@ abstract class ScanFrameLayer extends ScanLayer {
   Path outline(ScanFxFrame frame) {
     final quad = frame.quad;
     final radius = frame.cornerRadius;
-    final shape = frame.theme.frameShape;
     final exponent = frame.theme.squircleExponent;
+    final phase = outlinePhaseKey(frame);
     if (_outline != null &&
         _outlineQuad == quad &&
         _outlineRadius == radius &&
         _outlineShape == shape &&
-        _outlineExponent == exponent) {
+        _outlineExponent == exponent &&
+        _outlinePhase == phase) {
       return _outline!;
     }
     final path = buildOutline(frame);
@@ -52,11 +73,20 @@ abstract class ScanFrameLayer extends ScanLayer {
     _outlineRadius = radius;
     _outlineShape = shape;
     _outlineExponent = exponent;
+    _outlinePhase = phase;
     return path;
   }
 
   /// Builds the outline for [frame]'s current quad. Called only on a cache miss.
-  Path buildOutline(ScanFxFrame frame);
+  ///
+  /// The default implementation resolves [shape]; override it for a style whose
+  /// outline is not a plain [ScanFramePath].
+  Path buildOutline(ScanFxFrame frame) => ScanFramePath.of(
+        frame.quad,
+        shape,
+        frame.cornerRadius,
+        exponent: frame.theme.squircleExponent,
+      );
 
   @override
   void paint(Canvas canvas, Size size, ScanFxFrame frame) {
