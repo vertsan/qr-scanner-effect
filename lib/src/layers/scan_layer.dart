@@ -1,0 +1,93 @@
+import 'package:flutter/widgets.dart';
+
+import '../animation/scan_fx_frame.dart';
+import '../theme/scan_fx_style.dart';
+
+/// A single drawable unit of the overlay.
+///
+/// Layers are deliberately tiny: a style is a class that turns a
+/// [ScanFxFrame] into a handful of canvas calls. Splitting the overlay this way
+/// is what makes "every combination works" true and what keeps each style under
+/// fifty lines.
+///
+/// A layer **must not** allocate inside [paint]. Cached geometry lives in the
+/// layer instance (which is created once), and is invalidated by comparing a
+/// stored key — usually `frame.revision` — before rebuilding.
+///
+/// ```dart
+/// class MyBeam extends ScanLayer {
+///   const MyBeam();
+///
+///   @override
+///   ScanLayerKind get kind => ScanLayerKind.beam;
+///
+///   @override
+///   void paint(Canvas canvas, Size size, ScanFxFrame frame) {
+///     // ...
+///   }
+/// }
+/// ```
+abstract class ScanLayer {
+  /// Const constructor so layers can be `const` and cheap to rebuild.
+  const ScanLayer();
+
+  /// Which slot this layer occupies. Used for ordering, hiding and replacing.
+  ScanLayerKind get kind;
+
+  /// Whether this layer's output can change between frames.
+  ///
+  /// Returning `false` lets the animation core stop ticking entirely while the
+  /// layer is on screen. It is a promise, not a hint: a static layer that reads
+  /// animated values would freeze.
+  bool get animated => true;
+
+  /// Whether this layer returns a widget from [buildEffect].
+  ///
+  /// Declared explicitly (rather than probed) so the overlay can decide whether
+  /// it needs a widget-level effect stack without calling [buildEffect].
+  bool get wantsWidget => false;
+
+  /// Draws the layer.
+  ///
+  /// [size] is the overlay size; [frame] is the shared snapshot. Implementations
+  /// must be pure with respect to their own allocation: mutate cached [Paint]
+  /// and `Path` objects, never create new ones.
+  void paint(Canvas canvas, Size size, ScanFxFrame frame);
+
+  /// An optional widget rendered *under* the painter.
+  ///
+  /// This exists because a genuine frosted backdrop needs
+  /// [BackdropFilter], which is a widget-level effect that cannot be expressed
+  /// as canvas calls. Only backdrop layers use it, and returning `null` (the
+  /// default) keeps the overlay a single `CustomPaint`.
+  Widget? buildEffect(BuildContext context, ScanFxFrame frame) => null;
+}
+
+/// Wraps a host-supplied [CustomPainter] so it can be dropped into the stack.
+class CustomScanLayer extends ScanLayer {
+  /// Creates a layer from a painter.
+  const CustomScanLayer(
+    this.painter, {
+    this.layerKind = ScanLayerKind.effects,
+    this.isAnimated = true,
+  });
+
+  /// The painter to delegate to.
+  final CustomPainter painter;
+
+  /// The slot this layer occupies.
+  final ScanLayerKind layerKind;
+
+  /// Whether the painter depends on animated values.
+  final bool isAnimated;
+
+  @override
+  ScanLayerKind get kind => layerKind;
+
+  @override
+  bool get animated => isAnimated;
+
+  @override
+  void paint(Canvas canvas, Size size, ScanFxFrame frame) =>
+      painter.paint(canvas, size);
+}
