@@ -1,5 +1,7 @@
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart' show protected;
+
 import '../../animation/scan_fx_frame.dart';
 import '../../geometry/scan_frame_path.dart';
 import '../../geometry/scan_fx_quad.dart';
