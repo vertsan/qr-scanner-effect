@@ -120,6 +120,8 @@ class QrScanFxTheme extends ThemeExtension<QrScanFxTheme> {
     successColor: Color(0xFF3FBF8F),
     errorColor: Color(0xFFE0605F),
     invalidColor: Color(0xFFE0A33F),
+    hintBackgroundColor: Color(0xFF0B1220),
+    hintTextColor: Color(0xFFF2F6FC),
     glowStrength: 0.22,
     frameStrokeWidth: 2,
     cornerStrokeWidth: 4,
@@ -152,6 +154,192 @@ class QrScanFxTheme extends ThemeExtension<QrScanFxTheme> {
       invalid: 'Unsupported or invalid QR code',
       tapToStart: 'Point the camera at the code',
     ),
+  );
+
+  /// Aurora: cool teal-cyan with a drifting curtain of light.
+  static const QrScanFxTheme aurora = QrScanFxTheme(
+    frameColor: Color(0xFFE6FFFB),
+    frameGlowColor: Color(0xFF3DDCFF),
+    cornerColor: Color(0xFFFFFFFF),
+    beamColor: Color(0xFF64FFDA),
+    beamAccentColor: Color(0xFFFFFFFF),
+    backdropColor: Color(0xFF061826),
+    successColor: Color(0xFF35D07F),
+    errorColor: Color(0xFFFF5A5F),
+    invalidColor: Color(0xFFFFB020),
+    glowStrength: 0.38,
+    frameStrokeWidth: 2.5,
+    cornerStrokeWidth: 4,
+    beamStyle: ScanBeamStyle.aurora,
+    lockStyle: ScanLockStyle.smoothMorph,
+    backdropStyle: ScanBackdropStyle.gradientFade,
+  );
+
+  /// Neon cyberpunk: electric cyan and violet.
+  static const QrScanFxTheme neonCyber = QrScanFxTheme(
+    frameColor: Color(0xFFF5E6FF),
+    frameGlowColor: Color(0xFF7C4DFF),
+    cornerColor: Color(0xFFFFFFFF),
+    beamColor: Color(0xFF40C4FF),
+    beamAccentColor: Color(0xFFFFFFFF),
+    backdropColor: Color(0xFF050510),
+    successColor: Color(0xFF39FF14),
+    errorColor: Color(0xFFFF3366),
+    invalidColor: Color(0xFFFFB020),
+    glowStrength: 0.5,
+    frameStrokeWidth: 2,
+    beamStyle: ScanBeamStyle.doubleLaser,
+    lockStyle: ScanLockStyle.glitchLock,
+    backdropStyle: ScanBackdropStyle.vignette,
+    cornerStyle: ScanCornerStyle.glowing,
+  );
+
+  /// Mono glass: clean white hairlines over a deep black scrim.
+  static const QrScanFxTheme monoGlass = QrScanFxTheme(
+    frameColor: Color(0xFFFFFFFF),
+    frameGlowColor: Color(0x80FFFFFF),
+    cornerColor: Color(0xFFFFFFFF),
+    beamColor: Color(0xFFFFFFFF),
+    beamAccentColor: Color(0xFFFFFFFF),
+    backdropColor: Color(0xFF000000),
+    successColor: Color(0xFF4CAF50),
+    errorColor: Color(0xFFF44336),
+    invalidColor: Color(0xFFFFC107),
+    glowStrength: 0.25,
+    frameStrokeWidth: 1.5,
+    beamStyle: ScanBeamStyle.softGradientBar,
+    backdropStyle: ScanBackdropStyle.blurredFrost,
+    cornerStyle: ScanCornerStyle.rounded,
+  );
+
+  /// Sunset gradient: warm amber fading to rose.
+  static const QrScanFxTheme sunsetGradient = QrScanFxTheme(
+    frameColor: Color(0xFFFFF3E0),
+    frameGlowColor: Color(0xFFFF7043),
+    cornerColor: Color(0xFFFFFFFF),
+    beamColor: Color(0xFFFFA726),
+    beamAccentColor: Color(0xFFFFCC80),
+    backdropColor: Color(0xFF1A0E08),
+    successColor: Color(0xFF81C784),
+    errorColor: Color(0xFFE57373),
+    invalidColor: Color(0xFFFFB74D),
+    glowStrength: 0.4,
+    frameStrokeWidth: 2.5,
+    beamStyle: ScanBeamStyle.waveform,
+    backdropStyle: ScanBackdropStyle.gradientFade,
+    cornerStyle: ScanCornerStyle.chamfered,
+  );
+
+  /// Ocean deep: layered blues with a soft pulse.
+  static const QrScanFxTheme oceanDeep = QrScanFxTheme(
+    frameColor: Color(0xFFE8F1FF),
+    frameGlowColor: Color(0xFF1565C0),
+    cornerColor: Color(0xFFFFFFFF),
+    beamColor: Color(0xFF4FC3F7),
+    beamAccentColor: Color(0xFFB3E5FC),
+    backdropColor: Color(0xFF060B1F),
+    successColor: Color(0xFF66BB6A),
+    errorColor: Color(0xFFEF5350),
+    invalidColor: Color(0xFFFFCA28),
+    glowStrength: 0.32,
+    frameStrokeWidth: 2,
+    beamStyle: ScanBeamStyle.softGradientBar,
+    backdropStyle: ScanBackdropStyle.solidDim,
+    lockStyle: ScanLockStyle.pulseLock,
+  );
+
+  /// Matrix green: terminal phosphor.
+  static const QrScanFxTheme matrixGreen = QrScanFxTheme(
+    frameColor: Color(0xFFB9F6CA),
+    frameGlowColor: Color(0xFF00C853),
+    cornerColor: Color(0xFFFFFFFF),
+    beamColor: Color(0xFF69F0AE),
+    beamAccentColor: Color(0xFFB9F6CA),
+    backdropColor: Color(0xFF020F08),
+    successColor: Color(0xFF69F0AE),
+    errorColor: Color(0xFFFF5252),
+    invalidColor: Color(0xFFFFD740),
+    glowStrength: 0.42,
+    frameStrokeWidth: 2,
+    beamStyle: ScanBeamStyle.line,
+    cornerStyle: ScanCornerStyle.sharp,
+    backdropStyle: ScanBackdropStyle.gradientFade,
+    frameShape: ScanFrameShape.fullBorder,
+  );
+
+  /// Rose gold: warm, premium, low-key.
+  static const QrScanFxTheme roseGold = QrScanFxTheme(
+    frameColor: Color(0xFFFDEAE6),
+    frameGlowColor: Color(0xFFF48FB1),
+    cornerColor: Color(0xFFFFFFFF),
+    beamColor: Color(0xFFF8BBD9),
+    beamAccentColor: Color(0xFFFFFFFF),
+    backdropColor: Color(0xFF14040C),
+    successColor: Color(0xFF80CBC4),
+    errorColor: Color(0xFFF06292),
+    invalidColor: Color(0xFFFFD54F),
+    glowStrength: 0.36,
+    frameStrokeWidth: 2.5,
+    cornerStyle: ScanCornerStyle.chamfered,
+    backdropStyle: ScanBackdropStyle.vignette,
+    beamStyle: ScanBeamStyle.waveform,
+  );
+
+  /// Midnight purple: cinematic and calm.
+  static const QrScanFxTheme midnightPurple = QrScanFxTheme(
+    frameColor: Color(0xFFEDE7F6),
+    frameGlowColor: Color(0xFF9575CD),
+    cornerColor: Color(0xFFFFFFFF),
+    beamColor: Color(0xFFB39DDB),
+    beamAccentColor: Color(0xFFFEFEFE),
+    backdropColor: Color(0xFF08040F),
+    successColor: Color(0xFF81C784),
+    errorColor: Color(0xFFEF5350),
+    invalidColor: Color(0xFFFFD54F),
+    glowStrength: 0.4,
+    frameStrokeWidth: 2,
+    beamStyle: ScanBeamStyle.pulseRings,
+    backdropStyle: ScanBackdropStyle.spotlight,
+    lockStyle: ScanLockStyle.ringContract,
+  );
+
+  /// Clean white: maximum legibility over any preview.
+  static const QrScanFxTheme cleanWhite = QrScanFxTheme(
+    frameColor: Color(0xFFFFFFFF),
+    frameGlowColor: Color(0x33000000),
+    cornerColor: Color(0xFFFFFFFF),
+    beamColor: Color(0xFFFFFFFF),
+    beamAccentColor: Color(0xFFFAFAFA),
+    backdropColor: Color(0x80000000),
+    successColor: Color(0xFF2E7D32),
+    errorColor: Color(0xFFC62828),
+    invalidColor: Color(0xFFF9A825),
+    glowStrength: 0.15,
+    frameStrokeWidth: 2,
+    beamStyle: ScanBeamStyle.line,
+    backdropStyle: ScanBackdropStyle.solidDim,
+    cornerStyle: ScanCornerStyle.rounded,
+  );
+
+  /// High contrast: WCAG-friendly flat colours for accessibility testing.
+  static const QrScanFxTheme highContrast = QrScanFxTheme(
+    frameColor: Color(0xFFFFFFFF),
+    frameGlowColor: Color(0xFFFFFFFF),
+    cornerColor: Color(0xFFFFFFFF),
+    beamColor: Color(0xFFFFFF00),
+    beamAccentColor: Color(0xFFFFFFFF),
+    backdropColor: Color(0xFF000000),
+    successColor: Color(0xFF00FF00),
+    errorColor: Color(0xFFFF0000),
+    invalidColor: Color(0xFFFFC107),
+    glowStrength: 0.6,
+    frameStrokeWidth: 3,
+    cornerStrokeWidth: 6,
+    beamStyle: ScanBeamStyle.doubleLaser,
+    backdropStyle: ScanBackdropStyle.solidDim,
+    cornerStyle: ScanCornerStyle.sharp,
+    frameShape: ScanFrameShape.fullBorder,
+    lockStyle: ScanLockStyle.springSnap,
   );
 
   /// A high-contrast, minimal light theme with thin strokes.

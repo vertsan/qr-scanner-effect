@@ -1,0 +1,23 @@
+name: qr_scan_fx_example
+description: >-
+  Runnable examples for the qr_scan_fx overlay: a calm banking-flow demo and a
+  style studio for exploring every frame, corner, beam and effect combination.
+
+publish_to: none
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  image_picker: ^1.1.2
+  mobile_scanner: ^7.4.2
+  qr_scan_fx:
+    path: ../
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+  flutter_test:
+    sdk: flutter

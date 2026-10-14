@@ -8,7 +8,9 @@ import '../layers/scan_layer_painter.dart';
 import '../layers/scan_layer_stack.dart';
 import '../state/scan_fx_state.dart';
 import '../theme/qr_scan_fx_theme.dart';
+import '../theme/scan_fx_recipe.dart';
 import '../theme/scan_fx_tunables.dart';
+import 'scan_fx_status_notice.dart';
 
 /// Lets a host reorder, hide, replace or extend the default layer stack.
 ///
@@ -81,12 +83,139 @@ class QrScanFx extends StatefulWidget {
     this.tunables,
     this.autoLock = true,
     this.layers,
+    this.confirmationBuilder,
+    this.messageBuilder,
+    this.controlsBuilder,
     this.onStateChanged,
     this.child,
   }) : assert(
           quarterTurns >= 0 && quarterTurns < 4,
           'quarterTurns must be 0..3',
         );
+
+  /// Creates an overlay already styled by [preset].
+  ///
+  /// The shortcut for the common case — "I want a look, not a configuration":
+  ///
+  /// ```dart
+  /// QrScanFx.preset(ScanPreset.cyberpunk, controller: controller)
+  /// ```
+  ///
+  /// The preset only chooses the theme; everything else behaves exactly as the
+  /// default constructor. Read the resolved theme back with
+  /// [ScanFxRecipes.theme] when you want to adjust it before passing it to
+  /// [QrScanFx.theme].
+  factory QrScanFx.preset(
+    ScanPreset preset, {
+    Key? key,
+    QrScanFxController? controller,
+    ScanFxState? state,
+    Rect? detectedBounds,
+    List<Offset>? detectedCorners,
+    bool normalized = false,
+    bool flipX = false,
+    bool flipY = false,
+    int quarterTurns = 0,
+    Size? scanAreaSize,
+    bool autoLock = true,
+    ScanLayersBuilder? layers,
+    ValueChanged<ScanFxState>? onStateChanged,
+    Widget? child,
+  }) =>
+      QrScanFx(
+        key: key,
+        controller: controller,
+        state: state,
+        detectedBounds: detectedBounds,
+        detectedCorners: detectedCorners,
+        normalized: normalized,
+        flipX: flipX,
+        flipY: flipY,
+        quarterTurns: quarterTurns,
+        scanAreaSize: scanAreaSize,
+        theme: ScanFxRecipes.theme(preset),
+        autoLock: autoLock,
+        layers: layers,
+        onStateChanged: onStateChanged,
+        child: child,
+      );
+
+  /// Creates a calm banking / fintech overlay.
+  ///
+  /// This is the payment-shaped default: neutral blue on near-black, a soft
+  /// beam, a critically damped lock-on, and **no** particles, glitch, confetti
+  /// or neon — because a theme that does not name a loud style cannot render
+  /// one, no matter how it is driven. Every duration is under 400 ms.
+  ///
+  /// ```dart
+  /// QrScanFx.banking(
+  ///   controller: controller,
+  ///   onRetry: () => controller.reset(),
+  ///   controlsBuilder: (context) => Row(children: [
+  ///     IconButton(onPressed: toggleTorch, icon: const Icon(Icons.flashlight_on)),
+  ///     IconButton(onPressed: pickFromGallery, icon: const Icon(Icons.photo_library)),
+  ///   ]),
+  /// )
+  /// ```
+  ///
+  /// ### What "success" means here
+  ///
+  /// [QrScanFxController.success] means **the code was scanned**. It does not
+  /// mean a payment succeeded, was authorised, or was even attempted — the
+  /// package has no idea, and nothing in this widget will ever imply it. The
+  /// [confirmationBuilder] seat is where the host confirms *its own* outcome in
+  /// its own words.
+  ///
+  /// Unless [messageBuilder] is supplied, an invalid or failed read shows a
+  /// [ScanFxStatusNotice] carrying the copy passed to
+  /// [QrScanFxController.invalid] / [QrScanFxController.error] plus a retry
+  /// button wired to [onRetry].
+  factory QrScanFx.banking({
+    Key? key,
+    required QrScanFxController controller,
+    VoidCallback? onRetry,
+    QrScanFxTheme? theme,
+    ScanFxTunables? tunables,
+    Size? scanAreaSize,
+    Size? sensorSize,
+    BoxFit previewFit = BoxFit.cover,
+    WidgetBuilder? confirmationBuilder,
+    WidgetBuilder? messageBuilder,
+    WidgetBuilder? controlsBuilder,
+    ScanLayersBuilder? layers,
+    ValueChanged<ScanFxState>? onStateChanged,
+    Widget? child,
+  }) {
+    final resolved = theme ?? QrScanFxTheme.bankingBlue;
+    return QrScanFx(
+      key: key,
+      controller: controller,
+      theme: resolved,
+      tunables: tunables,
+      scanAreaSize: scanAreaSize,
+      sensorSize: sensorSize,
+      previewFit: previewFit,
+      layers: layers,
+      confirmationBuilder: confirmationBuilder,
+      controlsBuilder: controlsBuilder,
+      messageBuilder: messageBuilder ??
+          (BuildContext context) => Align(
+                alignment: const Alignment(0, 0.74),
+                child: SafeArea(
+                  top: false,
+                  child: ScanFxStatusNotice(
+                    message: controller.message,
+                    fallback: resolved.labels.invalid,
+                    onRetry: onRetry,
+                    backgroundColor: resolved.hintBackgroundColor,
+                    foregroundColor: resolved.hintTextColor,
+                  ),
+                ),
+              ),
+      onStateChanged: onStateChanged,
+      child: child,
+    );
+  }
 
   /// The imperative handle. When omitted the widget creates and owns one.
   final QrScanFxController? controller;
@@ -147,6 +276,33 @@ class QrScanFx extends StatefulWidget {
 
   /// A hook for reordering, hiding, replacing or extending the layer stack.
   final ScanLayersBuilder? layers;
+
+  /// Built and inserted into the overlay's stack **only while the state is
+  /// [ScanFxState.success]**.
+  ///
+  /// This is the confirmation seat. It appears once the overlay has confirmed a
+  /// read, and it is the host's job to keep the copy neutral — the package never
+  /// says "paid", "sent" or "complete", because it does not know.
+  ///
+  /// The returned widget is placed as a direct child of the overlay's [Stack],
+  /// so wrap it in `Align`/`Positioned`/`Padding` to place it. Returning `null`
+  /// is not allowed; return a [SizedBox.shrink] for "nothing this time".
+  final WidgetBuilder? confirmationBuilder;
+
+  /// Built and inserted while the state is [ScanFxState.invalid] or
+  /// [ScanFxState.error].
+  ///
+  /// The host copy for the failure is available on
+  /// [QrScanFxController.message]; [ScanFxStatusNotice] renders it with a retry
+  /// affordance if you would rather not build your own.
+  final WidgetBuilder? messageBuilder;
+
+  /// Built and inserted unconditionally — the seat for a control bar.
+  ///
+  /// Torch, gallery and "enter code manually" are host concerns, because the
+  /// package owns no camera. This slot is where they go so they can be laid out
+  /// against the overlay's own frame instead of floating over it.
+  final WidgetBuilder? controlsBuilder;
 
   /// Called whenever the lifecycle state changes.
   final ValueChanged<ScanFxState>? onStateChanged;
@@ -413,6 +569,15 @@ class _QrScanFxState extends State<QrScanFx> with TickerProviderStateMixin {
                 ),
               ),
               ...stack.buildOverlays(context, frame),
+              if (widget.messageBuilder != null &&
+                  (frame.state == ScanFxState.invalid ||
+                      frame.state == ScanFxState.error))
+                widget.messageBuilder!(context),
+              if (widget.confirmationBuilder != null &&
+                  frame.state == ScanFxState.success)
+                widget.confirmationBuilder!(context),
+              if (widget.controlsBuilder != null)
+                widget.controlsBuilder!(context),
             ],
           ),
         );

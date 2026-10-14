@@ -6,6 +6,39 @@ Widget _host(Widget child) => MaterialApp(
       home: Align(alignment: Alignment.topLeft, child: child),
     );
 
+/// A hand-built frame snapshot, for tests that exercise one layer directly.
+ScanFxFrame _frame({
+  required QrScanFxTheme theme,
+  required ScanFrameShape shape,
+  required Rect quad,
+}) =>
+    ScanFxFrame(
+      size: const Size(300, 300),
+      state: ScanFxState.scanning,
+      theme: theme,
+      frameShape: shape,
+      ambientSeconds: 0,
+      focus: 0,
+      focusRaw: 0,
+      beamSpan: 0,
+      breath: 1,
+      dim: 0,
+      feedback: 0,
+      pulse: 0,
+      hint: 0,
+      reveal: 1,
+      shake: Offset.zero,
+      quad: ScanFxQuad.fromRect(quad),
+      defaultQuad: ScanFxQuad.fromRect(quad),
+      lockedQuad: null,
+      idleScale: 1,
+      idleOffset: Offset.zero,
+      shimmer: 0,
+      reduceMotion: false,
+      textDirection: TextDirection.ltr,
+      revision: 0,
+    );
+
 void main() {
   group('ScanFxRegistry', () {
     test('every style enum value maps to a layer of the right kind', () {
@@ -52,8 +85,10 @@ void main() {
       expect(ScanFxRegistry.success(ScanSuccessStyle.none).animated, isFalse);
       expect(ScanFxRegistry.error(ScanErrorStyle.none).animated, isFalse);
       expect(ScanFxRegistry.backdrop(ScanBackdropStyle.none).animated, isFalse);
+      expect(ScanFxRegistry.beam(ScanBeamStyle.none).animated, isFalse);
       expect(
           ScanFxRegistry.frame(ScanFrameShape.cornersOnly).animated, isFalse);
+      expect(ScanFxRegistry.reticle(ScanLockStyle.pulseLock).animated, isFalse);
     });
 
     test('a stack is built back-to-front in a stable order', () {
@@ -303,6 +338,72 @@ void main() {
         () => ScanFxTarget.corners(const <Offset>[Offset.zero]),
         throwsArgumentError,
       );
+    });
+  });
+
+  group('frame shape ownership', () {
+    test('the registry frame layer reports the shape it was asked for', () {
+      for (final shape in ScanFrameShape.values) {
+        expect(
+          ScanFxRegistry.frame(shape).shape,
+          shape,
+          reason: 'ScanFxRegistry.frame($shape)',
+        );
+      }
+    });
+
+    test('a built stack frames the theme shape', () {
+      for (final shape in ScanFrameShape.values) {
+        final theme = QrScanFxTheme.dark.copyWith(frameShape: shape);
+        final frame =
+            ScanFxRegistry.buildStack(theme).find(ScanLayerKind.frame);
+        expect(frame, isA<ScanFrameLayer>());
+        expect((frame! as ScanFrameLayer).shape, shape);
+      }
+    });
+
+    test('the backdrop punches out the *frame layer* shape, not the theme', () {
+      // The whole point of threading `frameShape` through the frame snapshot: a
+      // host who replaces the frame layer gets a cutout that still matches the
+      // outline on screen. So the theme here deliberately disagrees with the
+      // frame being painted.
+      final theme = QrScanFxTheme.dark.copyWith(
+        frameShape: ScanFrameShape.roundedSquare,
+      );
+      final backdrop = ScanFxRegistry.backdrop(ScanBackdropStyle.solidDim);
+      const quad = Rect.fromLTWH(70, 70, 160, 160);
+
+      // Measure the punched-out hole by the length of the cutout's outlines.
+      // The outer rectangle is identical in every case, and each distinct shape
+      // has a distinct perimeter, so comparing lengths answers "did the cutout
+      // follow the frame?" without depending on any single probe point.
+      double cutoutLength(ScanFrameShape shape) {
+        var total = 0.0;
+        for (final metric in backdrop
+            .cutoutPath(_frame(theme: theme, shape: shape, quad: quad))
+            .computeMetrics()) {
+          total += metric.length;
+        }
+        return total;
+      }
+
+      final sharp = cutoutLength(ScanFrameShape.fullBorder);
+      final rounded = cutoutLength(ScanFrameShape.roundedSquare);
+      final circle = cutoutLength(ScanFrameShape.circle);
+      final hexagon = cutoutLength(ScanFrameShape.hexagon);
+      final diamond = cutoutLength(ScanFrameShape.diamond);
+
+      // A straight border is the longest outline a quad can have.
+      expect(sharp, greaterThan(rounded + 1));
+      // Rounding the corners shortens it, and every other shape is its own
+      // geometry rather than a rounded square.
+      expect(circle, lessThan(rounded - 1));
+      expect((hexagon - rounded).abs(), greaterThan(1));
+      expect((hexagon - circle).abs(), greaterThan(1));
+      expect((diamond - rounded).abs(), greaterThan(1));
+
+      // ...and the theme still says rounded square, proving the frame won.
+      expect(theme.frameShape, ScanFrameShape.roundedSquare);
     });
   });
 

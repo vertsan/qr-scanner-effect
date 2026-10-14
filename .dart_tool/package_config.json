@@ -56,6 +56,12 @@
       "languageVersion": "3.10"
     },
     {
+      "name": "flutter_web_plugins",
+      "rootUri": "file:///C:/Users/Vert/.puro/envs/stable/flutter/packages/flutter_web_plugins",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
       "name": "leak_tracker",
       "rootUri": "file:///C:/Users/Vert/.puro/shared/pub_cache/hosted/pub.dev/leak_tracker-11.0.2",
       "packageUri": "lib/",
@@ -98,10 +104,22 @@
       "languageVersion": "3.5"
     },
     {
+      "name": "mobile_scanner",
+      "rootUri": "file:///C:/Users/Vert/.puro/shared/pub_cache/hosted/pub.dev/mobile_scanner-7.4.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
       "name": "path",
       "rootUri": "file:///C:/Users/Vert/.puro/shared/pub_cache/hosted/pub.dev/path-1.9.1",
       "packageUri": "lib/",
       "languageVersion": "3.4"
+    },
+    {
+      "name": "plugin_platform_interface",
+      "rootUri": "file:///C:/Users/Vert/.puro/shared/pub_cache/hosted/pub.dev/plugin_platform_interface-2.1.8",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
     },
     {
       "name": "sky_engine",
@@ -156,6 +174,12 @@
       "rootUri": "file:///C:/Users/Vert/.puro/shared/pub_cache/hosted/pub.dev/vm_service-15.3.0",
       "packageUri": "lib/",
       "languageVersion": "3.5"
+    },
+    {
+      "name": "web",
+      "rootUri": "file:///C:/Users/Vert/.puro/shared/pub_cache/hosted/pub.dev/web-1.1.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
     },
     {
       "name": "qr_scan_fx",

@@ -24,7 +24,8 @@ bounding box or four corner points — and returns pixels.
 - [Customizing the layer stack](#customizing-the-layer-stack)
 - [Live tuning](#live-tuning)
 - [Accessibility](#accessibility)
-- [Security boundary](#security-boundary)
+- [Banking mode](#banking-mode)
+- [Security model](#security-model)
 - [Performance](#performance)
 - [Requirements](#requirements)
 - [Project layout](#project-layout)
@@ -443,22 +444,111 @@ values can be seeded per widget with `QrScanFx(tunables: ...)`.
 
 ---
 
-## Security boundary
+## Banking mode
 
-The package has **no** API that accepts, stores, or transmits a QR payload.
+`QrScanFx.banking()` is the payment-shaped default: a neutral blue palette, a
+soft beam, a critically damped lock-on, and **nothing loud** — no particles, no
+glitch, no confetti, no neon. This is not a style you pass in; it is what the
+theme *cannot express*, because a theme that names no loud style cannot render
+one however it is driven, and every duration is capped below 400 ms.
 
-- Public controller methods take `ScanFxTarget`, `Rect` or `List<Offset>` only.
-- No payload string flows into any layer. The only strings are host-supplied UI
-  copy (`error` / `invalid` messages, hint text, semantics labels), treated as
-  opaque and never logged.
-- No `dart:io`, no networking, no persistence, no analytics anywhere in `lib/`.
-- `success()` means "the code was scanned" — never "the payment succeeded". The
-  package does not know, and must not imply, the latter. Hosts own validation and
-  any payment logic.
+```dart
+final controller = QrScanFxController();
 
-See `doc/architecture.md` for the full boundary and its rationale.
+QrScanFx.banking(
+  controller: controller,
+  onRetry: () => controller.reset(),
+  confirmationBuilder: (context) => const Text('Code captured'),
+  controlsBuilder: (context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      IconButton(onPressed: toggleTorch, icon: const Icon(Icons.flashlight_on)),
+      IconButton(onPressed: pickFromGallery, icon: const Icon(Icons.photo_library)),
+    ],
+  ),
+)
+```
+
+| Seat | Appears when | Purpose |
+|---|---|---|
+| `confirmationBuilder` | `success` | Your own confirmation, in your own words |
+| `messageBuilder` | `error` / `invalid` | The reason + retry (a `ScanFxStatusNotice` by default) |
+| `controlsBuilder` | always | Torch, gallery, "enter code manually" |
+
+Each builder is inserted as a direct child of the overlay's `Stack`, so wrap it
+in `Align`/`Positioned`/`Padding` to place it. All three are optional.
+
+### What `success` means
+
+`controller.success()` means **the code was scanned**. It does not mean a payment
+succeeded, was authorised, or was attempted. The package has no idea, and nothing
+it renders will ever suggest otherwise — `confirmationBuilder` is where *you*
+state *your* outcome. The package never triggers a payment, because it has no API
+that could.
+
+### Failure and retry
+
+`controller.invalid('This merchant code is not supported')` sets the message and
+moves the state. The default `messageBuilder` renders a `ScanFxStatusNotice`: a
+calm pill carrying that copy plus a "Try again" button wired to `onRetry`. It is a
+`ValueListenableBuilder`, so a rejection that lands *after* the state changed
+still reaches the screen.
+
+### Accessibility guarantees
+
+The banking palette is checked in CI, not just asserted: text and every state
+colour clear **4.5:1** against the backdrop (`ScanFxPalette.contrastRatio`), the
+notice wraps instead of clipping under a `textScaler` of 2.0, and the entrance
+animation is skipped when the platform requests reduced motion.
+
+Payment-specific guidance — what belongs in `confirmationBuilder`, what must
+*not*, and the exact boundary of the package's responsibility — lives in
+[`doc/payment-qr-guide.md`](doc/payment-qr-guide.md).
 
 ---
+
+## Security model
+
+The package has **no** API that accepts, stores, or transmits a QR payload, and
+this is enforced against the source rather than promised in prose.
+
+**The boundary, in one line:** the host decodes; the package receives geometry
+and returns pixels. Nothing else crosses.
+
+- Public controller methods take `ScanFxTarget`, `Rect` or `List<Offset>` only.
+  No method, field or parameter holds decoded text.
+- The only strings the package can hold are host-supplied UI copy (`error` /
+  `invalid` messages, hint text, semantics labels). They are treated as opaque,
+  never logged, and cleared as soon as the state moves on.
+- **No `dart:io`, no networking, no persistence, no analytics** anywhere in
+  `lib/src/`. The published package declares exactly one dependency: the Flutter
+  SDK. `mobile_scanner` is a **dev** dependency, used only by the dev-only demo
+  entrypoint (`lib/main.dart`) — the one file that is allowed near a camera.
+- `success()` means "the code was scanned" — never "the payment succeeded". Hosts
+  own validation and any payment logic.
+
+### How it is enforced
+
+`test/scan_fx_security_test.dart` reads every file under `lib/src/` (and the
+barrel) and fails if any of them:
+
+- imports `dart:io`, `dart:isolate`, `dart:ffi`, `package:flutter/services.dart`,
+  an HTTP client, a webview, a camera plugin or the Firebase SDK;
+- references `MethodChannel` / `EventChannel` / `BinaryMessenger`, an
+  `HttpClient`, a `Socket`, `Process`, `File`, or calls `print` / `debugPrint` /
+  `developer.log`;
+- contains the words `displayValue`, `rawValue`, `barcode`, `decodedText` or
+  `payloadText` in code;
+- or if `pubspec.yaml` grows a second runtime dependency.
+
+The suite also pins that a controller constructed with no payload ever holds one,
+and that only the dev entrypoint may reach the camera plugin. If a future change
+opens the boundary, a test fails before a review does.
+
+`doc/architecture.md` §11 carries the full rationale.
+
+---
+
 
 ## Performance
 
@@ -502,11 +592,16 @@ lib/
     physics/                   # springs, curves, timed values
     state/                     # ScanFxState + the pure Dart state machine
     theme/                     # ThemeExtension, styles, motion, tunables, labels
-    widget/                    # the QrScanFx widget
-test/                          # widget, state-machine and registry tests
+    widget/                    # the QrScanFx widget + ScanFxStatusNotice
+  main.dart                    # dev-only camera host (the runnable demo)
+example/                       # camera-free demos driven through the public API
+  lib/banking_demo.dart        # a calm payment flow
+test/                          # widget, state-machine, registry, banking,
+                               #   recipe and security tests
 doc/
   architecture.md              # layering, data flow, performance, security
   animation-spec.md            # the timing and spring spec
+  payment-qr-guide.md          # using the overlay in a payment flow
 ```
 
 The public API is re-exported from `lib/qr_scan_fx.dart`. Importing that file is
@@ -524,7 +619,11 @@ flutter test
 The suite covers the full `idle → … → reset` lifecycle, repeated detections not
 restarting the hold, declarative state reporting and geometry, rotated /
 mirrored / quarter-turned targets, reduce motion, controller swapping, pause /
-resume, custom layer reordering, and every registry style mapping.
+resume, custom layer reordering, every registry style mapping, every preset and
+recipe, the banking seats (confirmation, invalid message, retry, controls),
+4.5:1 banking contrast, 2.0 text scale, and the security boundary — which is
+checked against the source rather than promised, in
+`test/scan_fx_security_test.dart`.
 
 ---
 
@@ -535,6 +634,9 @@ resume, custom layer reordering, and every registry style mapping.
   budget and testing strategy.
 - [`doc/animation-spec.md`](doc/animation-spec.md) — the motion language:
   durations, curves and springs, and the reasoning behind each number.
+- [`doc/payment-qr-guide.md`](doc/payment-qr-guide.md) — using the overlay in a
+  payment flow: the host/package boundary, the confirmation slot, failure and
+  retry, and a security checklist.
 - The library doc comment in `lib/qr_scan_fx.dart` is the entry point to the API
   reference.
 

@@ -68,6 +68,7 @@ export 'src/state/scan_fx_state_machine.dart'
 export 'src/theme/qr_scan_fx_theme.dart' show QrScanFxTheme;
 export 'src/theme/scan_fx_labels.dart' show ScanFxSemanticsLabels;
 export 'src/theme/scan_fx_motion.dart' show ScanFxEasing, ScanFxMotion;
+export 'src/theme/scan_fx_recipe.dart' show ScanFxRecipes, ScanPreset;
 export 'src/theme/scan_fx_style.dart'
     show
         ScanBackdropOptions,
@@ -88,3 +89,4 @@ export 'src/theme/scan_fx_style.dart'
         ScanSuccessStyle;
 export 'src/theme/scan_fx_tunables.dart' show ScanFxPalette, ScanFxTunables;
 export 'src/widget/qr_scan_fx.dart' show QrScanFx, ScanLayersBuilder;
+export 'src/widget/scan_fx_status_notice.dart' show ScanFxStatusNotice;

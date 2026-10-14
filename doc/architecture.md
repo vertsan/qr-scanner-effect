@@ -36,70 +36,64 @@ paint helpers in `layers/paint/`.
 ```
 qr_scan_fx/
   lib/qr_scan_fx.dart                     # exports ONLY (no logic, no impl)
+  lib/main.dart                           # dev-only camera host (not published API)
   lib/src/
     # ---- public surface -------------------------------------------------
-    widgets/qr_scan_fx.dart               # QrScanFx widget (+ .banking(), .preset())
-    widgets/scan_fx_builders.dart         # typedefs: overlay/torch/gallery/hint/confirm
-    widgets/scan_fx_semantics.dart        # Semantics + announce policy
-    widgets/confirmation_host.dart        # banking confirmation slot host
+    widget/qr_scan_fx.dart                # QrScanFx widget (+ .banking(), .preset())
+    widget/scan_fx_status_notice.dart     # banking status pill (message + retry)
     controller/qr_scan_fx_controller.dart # public controller (ValueListenable<ScanFxState>)
-    theme/qr_scan_fx_theme.dart           # ThemeExtension<QrScanFxTheme>
-    theme/scan_fx_style.dart              # every style enum + sealed custom variants
+    # ---- theme ----------------------------------------------------------
+    theme/qr_scan_fx_theme.dart           # ThemeExtension<QrScanFxTheme> + 14 presets
+    theme/scan_fx_style.dart              # every style enum + every *Options class
     theme/scan_fx_motion.dart             # durations/curves/springs (motion spec)
-    theme/scan_fx_tunables.dart           # intensity/speed/glow/radius (live-tunable)
-    theme/scan_fx_presets.dart            # 12+ named presets
+    theme/scan_fx_tunables.dart           # intensity/speed/glow/radius + ScanFxPalette
     theme/scan_fx_recipe.dart             # ScanPreset recipes (5 one-liners)
-    theme/scan_fx_palette.dart            # color utils (contrast, lerp, tonal)
+    theme/scan_fx_labels.dart             # localizable semantics copy
     # ---- geometry / input ----------------------------------------------
     geometry/scan_fx_target.dart          # rect | corners target value object
-    geometry/scan_geometry_mapper.dart     # sensor space -> widget space
-    geometry/scan_fx_rect.dart             # animatable quad (4 corners + rect)
-    geometry/squircle.dart                # squircle/rounded-poly path math
+    geometry/scan_geometry_mapper.dart    # sensor space -> widget space
+    geometry/scan_fx_quad.dart            # animatable quad (4 corners + rect)
+    geometry/scan_fx_shapes.dart          # shared quad geometry helpers
+    geometry/scan_frame_path.dart         # the one scan-area outline builder
     # ---- state machine (pure Dart, no flutter deps) ---------------------
     state/scan_fx_state.dart
-    state/scan_fx_state_machine.dart
-    state/scan_fx_transition_table.dart
+    state/scan_fx_state_machine.dart      # trigger/transition table
     # ---- physics / curves (pure Dart) -----------------------------------
-    physics/scan_fx_spring.dart           # SpringDescription factory + solver
-    physics/scan_fx_motion_value.dart     # spring-simulated driven value
-    physics/scan_fx_curves.dart           # curve catalog
-    physics/scan_fx_damped_sine.dart      # shake / wobble generator
+    physics/scan_fx_spring.dart           # spring-simulated driven value
+    physics/scan_fx_curves.dart           # the custom curve catalog
+    physics/scan_fx_timed_value.dart      # retargetable timed value
     # ---- animation core ------------------------------------------------
     animation/scan_fx_director.dart       # owns controllers, builds ScanFxFrame
     animation/scan_fx_frame.dart          # immutable per-tick snapshot
-    animation/scan_fx_ambient.dart        # looping channel phases
-    animation/scan_fx_revision.dart       # repaint revision counter
     # ---- layer system --------------------------------------------------
-    layers/scan_layer.dart                # abstract ScanLayer
+    layers/scan_layer.dart                # abstract ScanLayer + ScanLayerKind
     layers/scan_layer_stack.dart          # ordered/hideable/replaceable stack
     layers/scan_layer_painter.dart        # the single CustomPainter
-    layers/paint/scan_paint_cache.dart    # Paint/Path/gradient cache
-    layers/paint/scan_glow.dart           # shader-or-blur glow abstraction
-    layers/paint/scan_squircle_clip.dart  # feathered cutout path
-    # ---- backdrop (widget + optional paint) -----------------------------
-    layers/backdrop/*.dart                # solid_dim, blurred_frost, vignette, ...
-    # ---- frame + corners ------------------------------------------------
-    layers/frame/*.dart
-    layers/corners/*.dart
-    # ---- beam -----------------------------------------------------------
-    layers/beam/*.dart
-    # ---- reticle (lock styles) ------------------------------------------
-    layers/reticle/*.dart
-    # ---- effects (success / error) --------------------------------------
-    layers/effects/success/*.dart
-    layers/effects/error/*.dart
-    # ---- idle motion ----------------------------------------------------
-    layers/idle/*.dart
-    # ---- banking --------------------------------------------------------
-    banking/banking_recipe.dart
-    # ---- diagnostics ----------------------------------------------------
-    diagnostics/scan_fx_profiler.dart     # debug-only frame budget probe
-  shaders/glow.frag                       # optional FragmentShader glow
-  example/                                # Style Studio + banking_demo
-  test/  test/golden/  test/compat/
-  doc/                                    # these documents
-  screenshots/                            # hero GIF + WebP previews
+    layers/scan_fx_registry.dart          # the one enum -> class mapping
+    layers/paint/scan_paint_cache.dart    # Paint/gradient cache
+    layers/paint/scan_path_cache.dart     # Path/outline cache
+    layers/paint/scan_glow.dart           # glow bloom helpers (blur-based)
+    # ---- one directory per category; one file per style -----------------
+    layers/backdrop/*.dart                # solidDim, blurredFrost, vignette, ...
+    layers/frame/*.dart                   # roundedSquare, squircle, hexagon, ...
+    layers/corners/*.dart                 # rounded, sharp, dot, chamfered, ...
+    layers/beam/*.dart                    # line, softGradientBar, aurora, ...
+    layers/reticle/*.dart                 # springSnap, smoothMorph, glitchLock, ...
+    layers/effects/success/*.dart         # checkMorph, confetti, ...
+    layers/effects/error/*.dart           # shake, glitch, crossMorph, ...
+    layers/idle/*.dart                    # breathing, floating, shimmer, still
+    layers/hint/scan_hint_layer.dart      # the idle hint widget
+  example/                                # camera-free demos (banking_demo, …)
+  test/                                   # unit, widget, registry, banking, security
+  doc/
+    architecture.md  animation-spec.md  payment-qr-guide.md
+  screenshots/                            # hero + previews (for pub.dev)
 ```
+
+**Banking is not a directory.** There is no `banking_recipe.dart` because
+`QrScanFx.banking()` is a factory that fixes the theme and installs the default
+failure seat — the same engine, the same layers. A separate render path would be a
+second thing to keep correct for no gain.
 
 **Why `layers/backdrop/*` is special:** a true frosted backdrop needs
 `BackdropFilter`, which is a *widget*, not a paint call. Each backdrop entry
@@ -294,53 +288,65 @@ class CustomScanLayer extends ScanLayer {           // user injection
 
 ### Style → implementation mapping
 
-Every style is an enum variant resolving to a concrete layer via a `switch`
-(single source of truth in `theme/scan_fx_style.dart` → `scan_fx_registry.dart`
-helpers). `custom(...)` variants carry a user `Path`/`CustomPainter`.
+Every style is an enum variant resolving to a concrete layer via an exhaustive
+`switch` in `layers/scan_fx_registry.dart`. The enums live in
+`theme/scan_fx_style.dart`; each variant has exactly one file under its category
+directory.
 
-The **Shipped** column is the state of the enums today; the remaining variants are
-the Phase 4 expansion and are listed so the vocabulary is frozen before those
-styles are written.
+| Category | Variants | Directory | LOC budget |
+|---|---|---|---|
+| Frame shape | `roundedSquare, squircle, circle, cornersOnly, hexagon, diamond, fullBorder, dashedBorder, viewfinderCross` | `layers/frame/<style>.dart` | ≤ 55 each |
+| Corner style | `rounded, sharp, dot, chamfered, pill, doubleLine, glowing, animatedDraw` | `layers/corners/<style>.dart` | ≤ 55 |
+| Beam | `line, softGradientBar, glowingLaser, doubleLaser, radar, gridScan, dotMatrix, waveform, pulseRings, aurora, none` | `layers/beam/<style>.dart` | ≤ 60 |
+| Backdrop | `solidDim, blurredFrost, vignette, gradientFade, spotlight, none` | `layers/backdrop/<style>.dart` | ≤ 55 |
+| Lock | `springSnap, smoothMorph, zoomIn, pulseLock, ringContract, scanlineSweepOver, particleBurst, glitchLock, none` | `layers/reticle/<style>.dart` | ≤ 60 |
+| Success | `checkMorph, colorWash, glowFlash, rippleWaves, confetti, cornersFlash, none` | `layers/effects/success/<style>.dart` | ≤ 55 |
+| Error | `shake, redPulse, fadeBlink, glitch, crossMorph, none` | `layers/effects/error/<style>.dart` | ≤ 55 |
+| Idle | `breathing, floating, shimmer, still` | `layers/idle/<style>.dart` | ≤ 45 |
 
-| Category | Shipped | Variants (shipped in **bold**) | Implemented in | LOC target |
-|---|---|---|---|---|
-| Frame shape | 4 | **roundedSquare, squircle, circle, cornersOnly**, hexagon, diamond, fullBorder, dashedBorder, bracketsThin, bracketsBold, viewfinderCross, custom(Path) | `layers/frame/<style>.dart` | ≤ 45 each |
-| Corner style | 3 | **rounded, sharp, dot**, chamfered, pill, doubleLine, glowing, animatedDraw | `layers/corners/<style>.dart` | ≤ 45 |
-| Beam | 3 | **line, softGradientBar, glowingLaser**, doubleLaser, radar, gridScan, dotMatrix, waveform, pulseRings, aurora, none | `layers/beam/<style>.dart` | ≤ 50 |
-| Backdrop | 5 | **solidDim, blurredFrost, vignette, gradientFade, none**, animatedNoise, spotlight | `layers/backdrop/<style>.dart` | ≤ 45 |
-| Lock | 4 | **springSnap, smoothMorph, zoomIn, none**, pulseLock, bracketCollapse, ringContract, scanlineSweepOver, particleBurst, glitchLock | `layers/reticle/<style>.dart` | ≤ 50 |
-| Success | 6 | **checkMorph, rippleWaves, confetti, glowFlash, colorWash, none**, cornersFlash, hapticOnly | `layers/effects/success/<style>.dart` | ≤ 45 |
-| Error | 5 | **shake, redPulse, fadeBlink, glitch, none**, crossMorph | `layers/effects/error/<style>.dart` | ≤ 40 |
-| Idle | 4 | **breathing, floating, shimmer, still** | `layers/idle/<style>.dart` | ≤ 35 |
+Phase 4 filled in the vocabulary above and, in doing so, **dropped five
+near-duplicates** rather than shipping them for the sake of the count:
+`bracketsThin`/`bracketsBold` (the corner *style* already controls arm length and
+stroke weight), `animatedNoise` (indistinguishable from `vignette` at 60 fps),
+`bracketCollapse` (a slower `ringContract`), and `hapticOnly` (a success style
+cannot haptically confirm anything without a third-party channel, which the package
+does not take). A host who wants a `Path` frame injects it as a `CustomScanLayer`
+— the same seam that has always existed — rather than through an enum variant that
+would have to carry state.
 
-`rippleWaves` and `confetti` are the shipped names for the `rippleBurst` and
-`confettiMini` sketched in Phase 1. The `lock` styles ship as three *distinct
-flourishes* — the AI-focus brackets, a calm morph and a zoom — all of which share
-one confirmation ring drawn by `ScanReticleLayer`; see `doc/animation-spec.md` §4.4.
-`glitch` is the shipped `error` style, and it degrades to a calm in-place tint on
-the `invalid` state rather than displacing the geometry.
+The lock styles are nine *distinct* flourishes that all share one confirmation ring
+drawn by `ScanReticleLayer`; see `doc/animation-spec.md` §4.4 for the per-style
+flourish and the spring it rides. `glitch` is the fault style used by both `error`
+and `invalid`, and it degrades to a calm in-place tint on `invalid` rather than
+displacing the geometry.
 
-`cornersOnly`/`bracketsThin`/`bracketsBold`/`fullBorder`/`dashedBorder` reuse the
-`corners` opacity channel; `frame` and `corners` are separate layers so any frame
-can pair with any bracket style (e.g. `circle` + `bracketsBold`).
+**Frame shape owns the outline.** `ScanFrameLayer.shape` is authoritative, and the
+director copies it into `ScanFxFrame.frameShape`; the frame stroke, the backdrop
+cutout and every cached outline are all built from that one value through
+`ScanFramePath.of`. This is what makes a `stack.replace(frame, …)` keep the dimmed
+cutout registered with the stroked border instead of silently disagreeing with it.
 
-**Idle styles are modifiers, not layers.** `ScanFxIdleMotion` feeds the ambient
-phase into the frame quad transform (`breathing` = scale 1±0.012; `floating` =
-±3px translate; `shimmer` = moving specular stop; `still` = identity). Keeping them
-as modifiers is what makes "every combination works" true — idle never conflicts
-with a frame style.
+**Idle styles are modifiers, not layers.** A `ScanFxIdleModifier` produces a
+`ScanFxIdleTransform` that the director folds into the frame quad (`breathing` =
+scale 1±0.012; `floating` = ±3px translate; `shimmer` = moving specular stop;
+`still` = identity). Keeping them as modifiers is what makes "every combination
+works" true — idle never conflicts with a frame style.
 
 ### Beam options
 
-`ScanBeamOptions(direction, motion, speed, thickness, trail, curve)`
-- `direction`: `vertical, horizontal, diagonal, radial` (honors `TextDirection`).
+`ScanBeamOptions(direction, motion, period, thickness, trail, glow)`
+- `direction`: `vertical, horizontal, diagonal, radial` (honors `TextDirection`);
+  `diagonal`/`radial` set `hasBand = false` and draw rail-free.
 - `motion`: `loop, pingPong, random`.
+- `period`: the sweep's full cycle, pre-divided by every applied speed factor.
 - `trail`: `0..1` fade length behind the head.
-- `curve`: which easing shapes the head's position curve.
+- `glow`: extra bloom on the head, independent of `glowStrength`.
 
-Lock and success options follow the same pattern:
-`ScanLockOptions(padding, cornerFollow, pulseStrength, overshoot)`,
-`ScanSuccessOptions(intensity, particles, duration)`.
+Lock, success, error and backdrop options follow the same shape:
+`ScanLockOptions(padding, cornerFollow, pulseStrength)`,
+`ScanSuccessOptions(checkStrokeWidth, rippleWaves, particleCount)`,
+`ScanErrorOptions(shakeAmplitude, pulseCount, crossStrokeWidth)`,
+`ScanBackdropOptions(dimOpacity, deepenedOpacity, feather, blurSigma, tintOpacity)`.
 
 ---
 
@@ -356,8 +362,8 @@ Lock and success options follow the same pattern:
   `motion` (ScanFxMotion), `tunables` (ScanFxTunables), `typography` (hint/confirm text
   styles), `semanticsLabels` (localizable strings).
 - Resolution: `widget theme ?? Theme.of(context).extension<QrScanFxTheme>() ??
-  QrScanFxTheme.defaults(Brightness)`. Registered globally via
-  `ThemeData(extensions: [QrScanFxTheme.aurora()])`.
+  QrScanFxTheme.dark|light` (by ambient `Brightness`). Register a global default
+  with `ThemeData(extensions: [QrScanFxTheme.aurora])`.
 - `QrScanFxTheme.fromColorScheme(ColorScheme)`: derives frame/beam/tint from
   `primary`/`surface`/`onSurface`, guaranteeing WCAG 4.5:1 for overlay text via
   `ScanFxPalette.ensureContrast`.
@@ -373,34 +379,41 @@ paint inputs; `intensity` scales alpha and glow amplitude. All clamped, never nu
 
 ### Presets and recipes
 
-- 12+ presets: `aurora, minimalLight, neonCyber, monoGlass, sunsetGradient,
-  oceanDeep, matrixGreen, roseGold, midnightPurple, bankingBlue, cleanWhite,
-  highContrast`.
-- 5 recipes: `QrScanFx.preset(ScanPreset.cyberpunk | appleVision | minimalBank |
-  retroLaser | playfulPop)` — each is a `(theme, layerStack, tunables, options)`
-  tuple, so a recipe fully determines the look in one line.
+- 14 presets — `dark, light, aurora, neonCyber, monoGlass, sunsetGradient,
+  oceanDeep, matrixGreen, roseGold, midnightPurple, bankingBlue, minimalLight,
+  cleanWhite, highContrast` — each a `const QrScanFxTheme`. `minimalLight` and
+  `cleanWhite` are the light-room pair; `highContrast` is the WCAG stress case.
+- 5 recipes: `ScanPreset { cyberpunk, appleVision, minimalBank, retroLaser,
+  playfulPop }`, resolved by `ScanFxRecipes.theme(preset)` and applied in one line
+  by `QrScanFx.preset(ScanPreset.…)`. A recipe is a *theme*, not a sealed bundle:
+  it pins the palette and the styles that belong with it, and the host layers
+  anything else on with `copyWith`. `doc/animation-spec.md` §10 is the table, and
+  `test/scan_fx_recipe_test.dart` pins it.
 
 ---
 
 ## 9. Banking / fintech mode
 
-`QrScanFx.banking(...)` applies `BankingRecipe`:
+`QrScanFx.banking(...)` is a thin factory over `QrScanFx` that fixes the theme to
+`QrScanFxTheme.bankingBlue` and installs a default failure seat. It is a *theme*
+choice, not a separate render path — the same engine, the same layers.
 
 | Rule | Implementation |
 |---|---|
-| No particles/glitch/confetti/neon | the banking theme names none of the loud styles (`success: colorWash`, `error: fadeBlink`, `lock: smoothMorph`, `beam: softGradientBar`, `backdrop: solidDim`), and a test pins those choices; the loud variants (`confetti`, `glitch`, `animatedNoise`, `aurora`) are simply never in the stack |
-| Subtle breathing frame, soft beam | `idle: breathing` @ amplitude 0.008, `beam: softGradientBar` |
-| Durations < 400 ms | `ScanFxMotion.banking()` — every transition ≤ 380 ms, springs critically damped |
-| Neutral blue/white/dark palette | `bankingBlue` / `cleanWhite` |
-| `success` == "Code scanned" | `semanticsLabels.success = 'Code scanned'`; README states this explicitly |
-| Confirmation slot | `confirmationBuilder(context, ConfirmationRequest(scanId))` shown on `locked`; the package passes **no payload**, only that a code was scanned |
-| `invalid` + retry | `invalid` state + `invalidMessage` slot + `onRetry` |
-| Torch + gallery on by default | default builders provided unless disabled |
-| 4.5:1 contrast | `ScanFxPalette.ensureContrast` at theme construction; enforced by test |
-| Large text | hint/confirmation use `TextStyle` from theme and scale with `textScaler` |
+| No particles/glitch/confetti/neon | `bankingBlue` names none of the loud styles (`success: colorWash`, `error: fadeBlink`, `lock: smoothMorph`, `beam: softGradientBar`, `backdrop: solidDim`). A theme that names no loud style cannot render one, however it is driven — and a test pins those choices |
+| Subtle breathing frame, soft beam | `idle: breathing`, `beam: softGradientBar` |
+| Durations < 400 ms | `ScanFxMotion.banking` — every transition ≤ 380 ms, `calmLockSpring` critically damped |
+| Neutral blue/white/dark palette | `bankingBlue` |
+| `success` == "Code scanned" | `labels.success = 'Code scanned'`; the README states the boundary explicitly |
+| Confirmation slot | `confirmationBuilder` is built on `success` and inserted into the overlay stack. The package passes only a `BuildContext` — **no payload, no amount, no outcome** |
+| `invalid` + retry | `messageBuilder` defaults to a `ScanFxStatusNotice` carrying `controller.message` plus a retry button wired to `onRetry` |
+| Torch + gallery | a `controlsBuilder` seat, always built, so the host lays `mobile_scanner`'s own controls out against the frame instead of over it. The package owns no camera |
+| 4.5:1 contrast | `bankingBlue` fixes the hint and state colours, and `test/scan_fx_banking_test.dart` measures `ScanFxPalette.contrastRatio` for each |
+| Large text | the notice and hints are widgets using `Wrap`, so a `textScaler` of 2.0 wraps instead of clipping — pinned by a test that would surface any overflow |
 
-`BankingRecipe` also pins `lockHoldMs` and disables `random` beam motion — the
-package must feel *calm and predictable*.
+The payment-specific narrative — what belongs in `confirmationBuilder`, what must
+not, and where the package's responsibility ends — is
+`doc/payment-qr-guide.md`.
 
 ---
 
@@ -410,8 +423,10 @@ package must feel *calm and predictable*.
   a static frame, fades ≤ 120 ms, no ambient loop, no particles. State changes
   still announced.
 - `ScanFxSemantics`: `Semantics(liveRegion: true, label: labelFor(state),
-  container: true)`; `SemanticsService.announce` fired **only** on state change
-  (never per tick), throttled to 1 per 500 ms, respecting `MediaQuery.accessibleNavigation`.
+  container: true)`; the announcement is **implicit** — the label changes with the
+  state, so the platform announces the transition and no imperative
+  `SemanticsService.announce` (deprecated) is used. `detected` and `locked` share
+  wording so the auto-lock hold never double-speaks.
 - Labels are theme-localizable strings, not hardcoded: "Scanning", "Code detected",
   "Code scanned", "Invalid code".
 - Layout: portrait/landscape/tablet safe areas; RTL-safe (hint slide and beam
@@ -429,19 +444,32 @@ The package has **no** API that accepts, stores, or transmits a QR payload strin
 - No `String` payload flows into any layer; the only strings are host-supplied UI
   copy (`error`/`invalid` messages, hint text) which are treated as opaque and
   never `print`ed.
-- No `dart:io`, no `http`, no `shared_preferences`, no logging in the core.
-- `test/security/no_payload_access_test.dart` proves it by:
-  1. lints/`grep`-style source scan asserting no `dart:io`/`http`/`print`/`debugPrint`
-     in `lib/` (a test that reads `lib/**` and fails on forbidden patterns), and
-  2. a behavioral test: drive every controller method with a payload-looking string
-     through the *only* string-accepting API (`invalid('...')`) and assert via a
-     `Zone`/`print` spy that nothing is emitted, no file handles open, and the
-     controller's public surface exposes only geometry.
+- No `dart:io`, no HTTP client, no `shared_preferences`, no logging, no platform
+  channel in the core. `pubspec.yaml` declares exactly one runtime dependency: the
+  Flutter SDK.
+- `test/scan_fx_security_test.dart` proves it against the source rather than by
+  promise. It reads every file under `lib/src/` and the barrel, strips comments,
+  and fails if any of them:
+  1. imports `dart:io` / `dart:isolate` / `dart:ffi` / `package:flutter/services.dart`
+     / an HTTP client / a webview / a camera plugin / the Firebase SDK;
+  2. references `MethodChannel`, `EventChannel`, `BinaryMessenger`, `HttpClient`,
+     `Socket`, `Process`, `File` or `Directory`, or calls `print` / `debugPrint` /
+     `developer.log`;
+  3. contains `displayValue`, `rawValue`, `barcode`, `decodedText` or
+     `payloadText` in code.
+  It additionally reads `pubspec.yaml` and fails if the runtime dependency list is
+  anything other than `[flutter]`, and asserts that only the dev-only entrypoint
+  (`lib/main.dart`) may name the camera plugin.
+- A behavioural companion in the same suite constructs a controller, drives it
+  through the only string-accepting API (`invalid('…')`) and asserts that the
+  geometry-only surface still holds and the message is cleared as the state moves
+  on.
 
-- `doc/payment-qr-guide.md` (Phase 5) covers EMV QR validation, CRC-16/CCITT check,
-  merchant/currency fields, confirmation screens, anti-spoofing UX (fake sticker
-  overlays, "verify the merchant name" copy, dynamic QR + amount checks), and
-  `FLAG_SECURE` / secure-screen guidance.
+- `doc/payment-qr-guide.md` covers the host/package boundary, the recommended
+  detect→acquire→decode→validate→confirm flow, what belongs in
+  `confirmationBuilder` and what must not, `invalid` vs `error` and retry,
+  anti-spoofing UX (amount from *your* validated result, never the raw payload),
+  and a security checklist.
 
 ---
 
@@ -456,9 +484,13 @@ Rules (verified by `scan_fx_profiler.dart` in debug and by golden/benchmark test
    never rebuilt by our ticks.
 3. `Path` reuse: `Path.reset()` + re-`addX` only when geometry delta > 0.25 px,
    else reuse the previous `Path`.
-4. Glow: `ScanGlow.paint(...)` uses the optional `FragmentShader` when loaded,
-   otherwise a cached `MaskFilter.blur` `Paint`. Blur sigma scales with `glow`
-   tunable so demos can dial cost down.
+4. Glow: `ScanGlow` uses a cached `MaskFilter.blur` `Paint`. Blur sigma scales
+   with the `glow` tunable so hosts can dial cost down; `glow == 0` skips the blur
+   pass entirely. There is deliberately **no `FragmentShader`**: the blur path
+   meets the frame budget on every target platform, needs no per-platform shader
+   asset or runtime load, and degrades to a hard-edged draw rather than failing on
+   platforms where shader compilation is unavailable (a shader would have to carry
+   a fallback anyway, so it would only add a second code path to keep correct).
 5. Gradients (beam, aurora) are cached per size and recreated only on size change.
 6. Ambient loops run on a single controller; when `state == success/error/invalid`
    and the burst is done, `_ambient` is stopped to drop idle CPU.
@@ -481,9 +513,11 @@ Frame budget target: **≤ 4 ms** overlay paint on a mid-range Android device fo
 | `physics/` | pure unit | spring settles within tolerance, no NaN, damping ratios match spec table |
 | `controller` | unit + widget | lockOn/success/error/invalid/reset sequences, tunable live change preserves progress |
 | `widget` | widget test | state→semantics label, reduce-motion static path, null child (no camera), RTL, light/dark, textScaler 2.0 |
+| `banking` | unit + widget | the three seats (confirmation / message / controls), retry wiring, host-copy over fallback, 2.0 text scale with a long message, 4.5:1 contrast |
+| `recipe` | unit + widget | every preset builds, every preset is distinct, `QrScanFx.preset` renders each, the resolved theme reaches the layers |
 | `golden` | golden | every preset + one sample per style enum variant |
 | `compat` | widget test | **all** style combinations render with no exception/overflow (matrix over the 8 categories) |
-| `security` | unit + source scan | §11 |
+| `security` | source scan + unit | §11, in `test/scan_fx_security_test.dart` |
 
 CI (`.github/workflows/ci.yaml`): `dart format --set-exit-if-changed`,
 `flutter analyze` (package + example, zero issues), `flutter test`,
@@ -501,12 +535,25 @@ CI (`.github/workflows/ci.yaml`): `dart format --set-exit-if-changed`,
 4. **`detected` is transient** (`autoLock` default true) — matches how Vision/Lens
    feel; `detected` remains sticky when `autoLock: false`.
 5. **Backdrop is a hybrid** widget+layer (needed for real frosted blur).
-6. **No camera dependency in the core**; `mobile_scanner` appears in `example/` only.
-7. **FragmentShader glow is optional and loadable at runtime**, with a blur fallback
-   when the asset/shader isn't available (web edge cases, custom builds).
+6. **No camera dependency in the core.** `mobile_scanner` is a *dev* dependency,
+   used only by the dev-only camera host at `lib/main.dart`. Nothing importable
+   from the barrel may reach it — asserted by `test/scan_fx_security_test.dart`.
+7. **Glow is a cached blur, never a `FragmentShader`.** The blur path meets the
+   frame budget on every platform, needs no shader asset or runtime load, and
+   degrades gracefully; a shader would have to carry an equivalent fallback and
+   would only add a second code path to keep correct.
+8. **Banking is a factory, not a mode.** `QrScanFx.banking()` fixes the theme and
+   installs the default failure seat; there is no second render path.
+9. **Host slots are `Builder`s inserted into the overlay stack.** Confirmation,
+   message and controls are the host's, so the package passes a `BuildContext`
+   and nothing else — no payload, no outcome.
 
-## 15. Open item for the gate
+## 15. Deliberate non-goals
 
-Only one, non-blocking: whether the package should live at the repo root (decision
-#1) or under a nested `qr_scan_fx/` directory. Everything else is settled and
-Phases 2–6 can proceed as soon as Phase 1 is approved.
+Recorded so a later pass does not "finish" them by accident:
+
+- No `FragmentShader` glow (§14.7).
+- No `banking/` subtree (§14.8) and no `BankingRecipe` type.
+- No `path_provider` / `shared_preferences` / analytics, ever (§11).
+- No `detected → locked` transition removal under reduce motion: reduce motion
+  shortens the hold, it never skips a state.

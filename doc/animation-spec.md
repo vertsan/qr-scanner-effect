@@ -106,6 +106,13 @@ convergence. With `autoLock: false`, `detected` holds indefinitely.
 | `colorWash` | 60 ms | 520 ms | `easeInOutCubic` | success color alpha 0→0.32→0 ✅ |
 | `rippleWaves` | 0 ms | 620 ms | `easeOutCubic` | ✅ `ScanSuccessOptions.rippleWaves` rings (default 3). Each ring lives `0.68` of the burst and launches are spread evenly over the remaining `0.32` (`step = 0.32 / (n − 1)`), so the **last ring always dies exactly as the burst ends** — a fixed stagger would leave a ring on screen after the success state had moved on. Scale 1 → 1.5, alpha `(1 − t)² · 0.5` |
 | `confetti` | 0 ms | 900 ms | ballistic | ✅ `ScanSuccessOptions.particleCount` pieces (default 22, table capacity 48). Each particle has its own `0..0.16` launch delay and lives `0.82` of the burst; alpha `1 − t³`; `g = 1.05·minSide` per unit of particle time. Position, size, rotation and the paper flip are **canvas transforms around one shared unit square**, so the style allocates nothing while it runs |
+| `none` | — | — | — | no overlay; the frame still tints to the success colour, so success is never invisible |
+
+`checkMorph`, `colorWash` and `glowFlash` leave a **persistent result** — the check
+stays drawn and the wash stays tinted until `reset()`. `cornersFlash`,
+`rippleWaves` and `confetti` are one-shot flourishes and decay back to zero, which
+is why each of them multiplies its alpha by `(1 − burst)`: a burst that reaches
+`1` must clear the canvas completely.
 
 Total timeline 900 ms, then the final visual (tinted frame + check) **holds** until
 `reset()`.
@@ -118,7 +125,12 @@ Total timeline 900 ms, then the final visual (tinted frame + check) **holds** un
 | `redPulse` | 0 ms | 600 ms | `easeInOutSine` | 2 pulses, frame tint → error color @ 0.45 |
 | `fadeBlink` | 0 ms | 240 ms ×2 | `easeInOutSine` | frame alpha 1→0.4→1 |
 | `glitch` | 0 ms | 620 ms | stepped | ✅ 12 held steps over a fixed displacement table (`6/0 / 0/−3 / −4/0 / 0/+4 / 3/2` px, scaled by `shakeAmplitude / 10`) with two dropout windows (`0.16..0.22`, `0.44..0.50`). A **held step** reads as a fault; a smooth slide would read as an animation. On `invalid` the displacements are dropped and only the tint remains |
-| `crossMorph` | 60 ms | 360 ms | `easeOutCubic` | ✕ stroke draw-in (`PathMetric`, 340 ms) |
+| `crossMorph` | 60 ms | 360 ms | `easeOutCubic` | ✕ stroke draw-in (`PathMetric`, 340 ms), drawn through `ScanFxShapes.quadPoint` so it follows rotation and perspective |
+| `none` | — | — | — | no overlay; the frame still tints to the error colour |
+
+`fadeBlink`, `redPulse` and `crossMorph` fade out with `(1 − burst)`; the frame
+tint is what remains. Fault effects are shared with `invalid` and read
+`frame.stateColor`, so a style never hard-codes red.
 
 ### 4.3 `* → invalid` (T6, banking-grade calm)
 
@@ -148,7 +160,19 @@ Because the ring is drawn by the shared base rather than by each style, the
 | `springSnap` | `FocusBracketReticle` | `focusRaw` | S1 |
 | `smoothMorph` | `MorphReticle` | `focus` | S2 (critically damped) |
 | `zoomIn` | `ZoomReticle` | `focusRaw` | S4 |
+| `pulseLock` | `PulseLockReticle` | `focus` | S7 ✅ |
+| `ringContract` | `RingContractReticle` | `focusRaw` | S5 ✅ |
+| `scanlineSweepOver` | `ScanlineSweepOverReticle` | `focus` | S1 |
+| `particleBurst` | `ParticleBurstReticle` | `focus` | S7 ✅ |
+| `glitchLock` | `GlitchLockReticle` | `focusRaw` | S8 ✅ |
 | `none` | — | — | — |
+
+Every flourish obeys the same contract as `FocusBracketReticle`: it draws only
+while `frame.hasTarget` is true, and its envelope fades to zero at `focus = 1`,
+so the whole family is silent once the lock has landed. `pulseLock` is the
+exception that proves the rule — it *is* the confirmation ring, so it delegates
+entirely to the shared `ScanReticleLayer` pulse and paints no flourish of its own
+(`animated => false`).
 
 **`FocusBracketReticle` — the signature effect.** Four brackets start
 `0.16 · minSide` *outside* the minimum quad and travel inwards, landing exactly on
@@ -176,24 +200,21 @@ second set of brackets on the corner layer.
 
 Flutter `SpringDescription(mass, stiffness, damping)`; `ζ = damping / (2·√(k·m))`.
 
-| ID | Name | mass | stiffness `k` | damping `c` | ζ | Settle | Overshoot | Used by |
-|---|---|---|---|---|---|---|---|---|
-| **S1** | `reticleLock` | 1 | 180 | 19.32 | 0.72 | ~480 ms | ≈ 4 % | T2 `springSnap` ✅ (`FocusBracketReticle`) |
-| S2 | `reticleLockCalm` | 1 | 220 | 29.66 | 1.00 | ~340 ms | 0 % | banking lock, `minimalBank`, `lock.smoothMorph` ✅ |
-| S3 | `successSnap` | 1 | 240 | 22.00 | 0.71 | ~380 ms | ≈ 4.5 % | success frame settle — *planned* |
-| S4 | `zoomIn` | 1 | 200 | 16.97 | 0.60 | ~420 ms | ≈ 9 % | `lock.zoomIn` scale ✅ |
-| S5 | `ringContract` | 1 | 260 | 25.80 | 0.80 | ~360 ms | ≈ 1.5 % | `lock.ringContract` radius — *planned* |
-| S6 | `bracketCollapse` | 1 | 300 | 24.25 | 0.70 | ~300 ms | ≈ 5 % | `lock.bracketCollapse` inset — *planned* |
-| S7 | `pulseLock` | 1 | 320 | 30.00 | 0.84 | ~280 ms | ≈ 2 % | `lock.glitchLock` variant — *planned* |
-| S8 | `glitchLock` | 1 | 420 | 21.00 | 0.51 | ~520 ms | ≈ 18 % | `lock.glitchLock` (intentionally bouncy) — *planned* |
-| **R1** | `resetSpring` | 1 | 260 | 32.25 | 1.00 | ~300 ms | 0 % | T7 return to the default area ✅ |
-| **RX** | `reducedSpring` | 1 | 2600 | 102.0 | 1.00 | ~60 ms | 0 % | every spring under reduce-motion ✅ |
+| ID | Name | mass | stiffness `k` | damping `c` | ζ | Settle | Overshoot | `ScanFxMotion` field | Used by |
+|---|---|---|---|---|---|---|---|---|---|
+| **S1** | `reticleLock` | 1 | 180 | 19.32 | 0.72 | ~480 ms | ≈ 4 % | `lockSpring` | T2 `springSnap` ✅ (`FocusBracketReticle`), `scanlineSweepOver` |
+| S2 | `reticleLockCalm` | 1 | 220 | 29.66 | 1.00 | ~340 ms | 0 % | `calmLockSpring` | banking lock, `minimalBank`, `lock.smoothMorph` ✅ |
+| S4 | `zoomIn` | 1 | 200 | 16.97 | 0.60 | ~420 ms | ≈ 9 % | `zoomSpring` | `lock.zoomIn` ✅ |
+| S5 | `ringContract` | 1 | 260 | 25.80 | 0.80 | ~360 ms | ≈ 1.5 % | `ringSpring` | `lock.ringContract` ✅ |
+| S7 | `pulseLock` | 1 | 320 | 30.00 | 0.84 | ~280 ms | ≈ 2 % | `snapSpring` | `lock.pulseLock`, `lock.particleBurst` ✅ |
+| S8 | `glitchLock` | 1 | 420 | 21.00 | 0.51 | ~520 ms | ≈ 18 % | `glitchSpring` | `lock.glitchLock` (intentionally bouncy) ✅ |
+| **R1** | `resetSpring` | 1 | 260 | 32.25 | 1.00 | ~300 ms | 0 % | `resetSpring` | T7 return to the default area ✅ |
+| **RX** | `reducedSpring` | 1 | 2600 | 102.0 | 1.00 | ~60 ms | 0 % | `reducedSpring` | every spring under reduce-motion ✅ |
 
-Rows marked ✅ exist in `ScanFxMotion` today; the *planned* rows are filled in by the
-Phase 4 lock styles that use them and are listed here so the numbers are frozen
-before those styles are written. `QrScanFxTheme.lockSpring` is the public entry
-point — it resolves reduce-motion first, then the style, so a style can never
-quietly opt back out of a reduced spring.
+Every row exists in `ScanFxMotion` today. A style never reads a spring field
+directly — `QrScanFxTheme.lockSpring` resolves reduce-motion first, then the style,
+so a style can never quietly opt back out of a reduced spring, and `null`-safe
+access is impossible because the switch is exhaustive over `ScanLockStyle`.
 
 `R1` is critically damped on purpose: returning to the scan area is a *reset*, and
 an overshoot there reads as an error rather than as momentum. `RX` is the
@@ -225,15 +246,31 @@ snapping. `ScanFxSpringValue` is allocation-free once constructed.
 
 ---
 
-## 6. Easing catalog (`physics/scan_fx_curves.dart`)
+## 6. Easing catalog
 
-`easeOutCubic`, `easeInCubic`, `easeInOutCubic`, `easeOutQuart`, `easeOutQuint`,
-`easeInOutSine`, `easeOutExpo`, `easeOutCirc`, `easeOutBack(1.70158)`,
-`anticipate(1.70158)`, `easeOutElastic(period: 0.3)`, `overshoot(amount)`,
-`dampedSine(freq, damping)`, `smoothstep`, `steps(n, jump: hold)`.
+Two small namespaces, so a style never hard-codes a magic curve:
 
-All are implemented as `Curve` subclasses (or `Curve` adaptations of the existing
-ones) with `transformInternal` overridden, no closures per call.
+`ScanFxEasing` (in `theme/scan_fx_motion.dart`) — the shape of a state change:
+
+| Member | Curve | Used for |
+|---|---|---|
+| `start` | `Curves.easeOutCubic` | scanning → detected reveal |
+| `converge` | `Curves.easeOutCubic` | lock hold / converge |
+| `burst` | `Curves.easeOutQuart` | one-shot flourish launches |
+| `release` | `Curves.easeInCubic` | leaving a state |
+| `ambient` | `Curves.easeInOutSine` | the shared ambient loop |
+| `wash` | `Curves.easeInOutCubic` | colour washes |
+
+`ScanFxCurves` (in `physics/scan_fx_curves.dart`) — the custom shapes that
+`Curves` does not provide, each a `const` `Curve` subclass with `transformInternal`
+overridden and no per-call closure:
+
+| Member | Shape | Used for |
+|---|---|---|
+| `smoothstep` | 3t²−2t³ | generic smooth ramp |
+| `overshootSoft` | +6 % overshoot | `checkMorph`, `crossMorph` draw-in |
+| `overshootStrong` | +12 % overshoot | emphatic accents |
+| `anticipateOvershoot` | −7 % dip then overshoot | playful launches |
 
 ---
 
@@ -326,13 +363,23 @@ only one that is correct across multiple windows).
 
 ## 10. Motion presets (recipes)
 
-| Recipe | Idle | Lock (spring) | Beam | Success | Feel |
-|---|---|---|---|---|---|
-| `appleVision` | breathing | S1 + pulseLock | softGradientBar | glowFlash + checkMorph | clean, dimensioned, calm |
-| `cyberpunk` | shimmer | S1 + glitchLock | glowingLaser | confetti | loud, fast, neon |
-| `minimalBank` | breathing (0.008) | S2 (critical) | softGradientBar | colorWash | quiet, trustworthy |
-| `retroLaser` | still | S1 + scanlineSweepOver | doubleLaser | cornersFlash | CRT / arcade |
-| `playfulPop` | floating | S3 + pulseLock | pulseRings | rippleWaves | soft, bouncy, toy-like |
+A recipe is a palette plus the styles that belong with it, resolved by
+`ScanFxRecipes.theme(ScanPreset)` and applied in one line by
+`QrScanFx.preset(ScanPreset.…)`. `test/scan_fx_recipe_test.dart` pins the table
+below: every recipe must resolve to a distinct theme, and every resolved theme
+must build a stack.
+
+| Recipe | Base palette | Frame | Corners | Beam | Backdrop | Lock (spring) | Success | Error |
+|---|---|---|---|---|---|---|---|---|
+| `cyberpunk` | `neonCyber` | roundedSquare | glowing | doubleLaser | vignette | glitchLock (S8) | checkMorph | shake |
+| `appleVision` | `monoGlass` | squircle (r=34) | rounded | softGradientBar | spotlight | smoothMorph (S2) | glowFlash | fadeBlink |
+| `minimalBank` | `bankingBlue` | roundedSquare | rounded | softGradientBar | solidDim | smoothMorph (S2) | colorWash | fadeBlink |
+| `retroLaser` | `matrixGreen` | fullBorder | sharp | line | gradientFade | scanlineSweepOver (S1) | cornersFlash | glitch |
+| `playfulPop` | `roseGold` | roundedSquare | pill | pulseRings | vignette | particleBurst (S7) | confetti | crossMorph |
+
+Idle is `breathing` for all five (the base palettes' default); a host who wants
+`shimmer` or `floating` layers it on with `copyWith`, which is the whole point of a
+recipe being a *theme* rather than a sealed configuration.
 
 `banking` (not a recipe but a mode) = `minimalBank` motion + hard caps from §4 and
 the layer restrictions in architecture §9.
