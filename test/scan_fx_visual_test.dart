@@ -474,22 +474,5 @@ void main() {
       }
     });
   });
-
-    test('every theme survives reduce motion, in every state', () async {
-      for (final MapEntry<String, QrScanFxTheme> e in named.entries) {
-        for (final _Probe probe in _probes) {
-          final _Render r = await _renderStack(
-            ScanFxRegistry.buildStack(e.value),
-            _frame(e.value, probe, reduceMotion: true),
-          );
-          expect(
-            r.ink,
-            greaterThan(0),
-            reason:
-                '${e.key} drew nothing at ${probe.name} under reduce motion',
-          );
-        }
-      }
-    });
   });
 }

@@ -53,7 +53,7 @@ Future<void> main() async {
   // `WidgetsFlutterBinding` is exported from `package:flutter/material.dart`
   // used for other tooling. Import the binding instead of pulling the whole
   // widget tree test helpers.
-  ui.FlutterBinding.ensureInitialized();
+  material.WidgetsFlutterBinding.ensureInitialized();
 
   final Directory shots = Directory('screenshots');
   if (!shots.existsSync()) {
