@@ -273,7 +273,7 @@ class _ScannerPageState extends State<ScannerPage>
   // ---------------------------------------------------------------------------
 
   void _onDetect(BarcodeCapture capture) {
-    if (_settled || capture.barcodes.isEmpty) return;
+    if (_settled || _picking || capture.barcodes.isEmpty) return;
     final Barcode code = capture.barcodes.first;
     final List<Offset> corners = code.corners;
     if (corners.length != 4) return; // Nothing to frame without corners.
@@ -310,37 +310,62 @@ class _ScannerPageState extends State<ScannerPage>
   Future<void> _pickFromGallery() async {
     if (_picking || _settled) return;
     setState(() => _picking = true);
+    var cameraStoppedForUpload = false;
+    var uploadStage = 'opening photo picker';
 
     try {
       final XFile? file = await _picker.pickImage(source: ImageSource.gallery);
       if (!mounted || file == null) return;
 
-      final BarcodeCapture? capture = await _camera.analyzeImage(file.path);
+      uploadStage = 'pausing camera';
+      cameraStoppedForUpload = true;
+      await _camera.stop();
+      uploadStage = 'reading selected image';
+      final BarcodeCapture? capture = await _camera.analyzeImage(
+        file.path,
+        formats: const <BarcodeFormat>[BarcodeFormat.qrCode],
+      );
       if (!mounted) return;
 
       final List<Barcode> codes = capture?.barcodes ?? const <Barcode>[];
       final Barcode? code = codes.isEmpty ? null : codes.first;
-      final List<Offset> corners = code?.corners ?? const <Offset>[];
-
-      if (corners.length != 4) {
+      if (code == null) {
         _fx.invalid('No QR code found in that image');
         return;
       }
-      final String? raw = code?.rawValue ?? code?.displayValue;
+      final String? raw = code.rawValue ?? code.displayValue;
       if (raw == null || raw.isEmpty) {
         _fx.invalid('That code carried no data');
         return;
       }
-      if (!capture!.size.isEmpty) {
-        setState(() => _sensorSize = capture.size);
-      }
       _settled = true;
-      _fx.lockOn(ScanFxTarget.corners(corners));
       await _settle(raw);
+    } on UnsupportedError {
+      if (mounted) _fx.invalid('QR upload is not supported on this device');
     } on MobileScannerException {
       if (mounted) _fx.invalid('That image could not be read');
+    } on PlatformException catch (error) {
+      debugPrint(
+        'Upload QR failed while $uploadStage '
+        '(${error.code}): ${error.message ?? error.details ?? 'no details'}',
+      );
+      if (mounted) _fx.invalid('Upload failed while $uploadStage (${error.code})');
+    } catch (error, stackTrace) {
+      debugPrint('Upload QR failed while $uploadStage: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      if (mounted) _fx.invalid('Could not read that image. Please try again');
     } finally {
-      if (mounted) setState(() => _picking = false);
+      if (mounted) {
+        setState(() => _picking = false);
+        if (cameraStoppedForUpload && !_settled) {
+          try {
+            await _camera.start();
+          } catch (error) {
+            debugPrint('Could not restart camera after gallery scan: $error');
+            if (mounted) _fx.invalid('Camera could not restart. Tap to retry');
+          }
+        }
+      }
     }
   }
 
@@ -366,6 +391,7 @@ class _ScannerPageState extends State<ScannerPage>
     });
     _fx.reset();
     _fx.start();
+    _retryCamera();
   }
 
   void _close() {
