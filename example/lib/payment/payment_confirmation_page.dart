@@ -222,8 +222,9 @@ class _ConfirmBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final PaymentCurrency other =
-        currency == PaymentCurrency.usd ? PaymentCurrency.khr : PaymentCurrency.usd;
+    final PaymentCurrency other = currency == PaymentCurrency.usd
+        ? PaymentCurrency.khr
+        : PaymentCurrency.usd;
 
     return SafeArea(
       minimum: const EdgeInsets.fromLTRB(20, 12, 20, 16),
@@ -234,7 +235,8 @@ class _ConfirmBar extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: AppTheme.surface,
-              border: Border.all(color: AppTheme.outline.withValues(alpha: 0.7)),
+              border:
+                  Border.all(color: AppTheme.outline.withValues(alpha: 0.7)),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Row(
@@ -250,9 +252,7 @@ class _ConfirmBar extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: <Widget>[
                     Text(
-                      amount == null
-                          ? '—'
-                          : formatMoney(amount!, currency),
+                      amount == null ? '—' : formatMoney(amount!, currency),
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -414,7 +414,9 @@ class _AccountTile extends StatelessWidget {
             child: Row(
               children: <Widget>[
                 Icon(
-                  selected ? Icons.check_circle : Icons.account_balance_outlined,
+                  selected
+                      ? Icons.check_circle
+                      : Icons.account_balance_outlined,
                   color: selected ? AppTheme.accent : AppTheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: 12),

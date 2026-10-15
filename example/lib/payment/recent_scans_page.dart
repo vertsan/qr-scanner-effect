@@ -117,7 +117,10 @@ class _RecentScansPageState extends State<RecentScansPage> {
         lastDay = day;
       }
       items.add(
-        _ReceiptCard(receipt: receipt, time: _clock(createdAt), onTap: () => _openReceipt(receipt)),
+        _ReceiptCard(
+            receipt: receipt,
+            time: _clock(createdAt),
+            onTap: () => _openReceipt(receipt)),
       );
     }
     return items;
@@ -320,6 +323,5 @@ String _dateLabel(DateTime time) {
 }
 
 /// `HH:mm`, tabular.
-String _clock(DateTime time) =>
-    '${time.hour.toString().padLeft(2, '0')}:'
+String _clock(DateTime time) => '${time.hour.toString().padLeft(2, '0')}:'
     '${time.minute.toString().padLeft(2, '0')}';

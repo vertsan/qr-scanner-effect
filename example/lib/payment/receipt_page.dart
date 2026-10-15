@@ -38,7 +38,9 @@ class ReceiptPage extends StatelessWidget {
 
   String get _accountLabel {
     final String? masked = receipt.account.maskedNumber;
-    return masked == null ? receipt.account.label : '${receipt.account.label} $masked';
+    return masked == null
+        ? receipt.account.label
+        : '${receipt.account.label} $masked';
   }
 
   Future<void> _share() async {
@@ -109,7 +111,8 @@ class ReceiptPage extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
             decoration: BoxDecoration(
               color: AppTheme.surface,
-              border: Border.all(color: AppTheme.outline.withValues(alpha: 0.7)),
+              border:
+                  Border.all(color: AppTheme.outline.withValues(alpha: 0.7)),
               borderRadius: BorderRadius.circular(18),
             ),
             child: Column(
@@ -180,7 +183,8 @@ class _SuccessHero extends StatelessWidget {
     return Center(
       child: TweenAnimationBuilder<double>(
         tween: Tween<double>(begin: reduceMotion ? 1 : 0.55, end: 1),
-        duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 460),
+        duration:
+            reduceMotion ? Duration.zero : const Duration(milliseconds: 460),
         curve: Curves.easeOutBack,
         builder: (BuildContext context, double scale, Widget? child) =>
             Transform.scale(scale: scale, child: child),

@@ -129,7 +129,6 @@ abstract final class ScannerStyle {
     ),
     labels: ScanFxSemanticsLabels(
       scanning: 'Scanning for a QR code',
-      
     ),
   );
 }

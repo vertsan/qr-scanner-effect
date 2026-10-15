@@ -32,9 +32,8 @@ abstract final class ReceiptStore {
   static Future<List<PaymentReceipt>> add(PaymentReceipt receipt) async {
     final List<PaymentReceipt> receipts = await load();
     final List<PaymentReceipt> next = <PaymentReceipt>[receipt, ...receipts];
-    final List<PaymentReceipt> trimmed = next.length > maxEntries
-        ? next.sublist(0, maxEntries)
-        : next;
+    final List<PaymentReceipt> trimmed =
+        next.length > maxEntries ? next.sublist(0, maxEntries) : next;
     await _write(trimmed);
     return trimmed;
   }

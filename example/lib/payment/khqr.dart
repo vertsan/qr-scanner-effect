@@ -146,7 +146,8 @@ PaymentCurrency paymentCurrencyFromName(String? name) => switch (name) {
     };
 
 /// Converts [amount] between the two supported currencies at [khrPerUsd].
-double convertCurrency(double amount, PaymentCurrency from, PaymentCurrency to) {
+double convertCurrency(
+    double amount, PaymentCurrency from, PaymentCurrency to) {
   if (from == to) return amount;
   return from == PaymentCurrency.usd ? amount * khrPerUsd : amount / khrPerUsd;
 }

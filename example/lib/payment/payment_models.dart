@@ -167,8 +167,9 @@ class PaymentReceipt {
       );
 
   /// The other currency, for the `≈` line.
-  PaymentCurrency get otherCurrency =>
-      currency == PaymentCurrency.usd ? PaymentCurrency.khr : PaymentCurrency.usd;
+  PaymentCurrency get otherCurrency => currency == PaymentCurrency.usd
+      ? PaymentCurrency.khr
+      : PaymentCurrency.usd;
 
   /// [amount] converted to [otherCurrency].
   double get otherAmount => convertCurrency(amount, currency, otherCurrency);
@@ -178,8 +179,8 @@ class PaymentReceipt {
   static String newId([math.Random? random]) {
     final math.Random rng = random ?? math.Random();
     const String alphabet = '0123456789ABCDEF';
-    final String suffix =
-        List<String>.generate(6, (int _) => alphabet[rng.nextInt(alphabet.length)]).join();
+    final String suffix = List<String>.generate(
+        6, (int _) => alphabet[rng.nextInt(alphabet.length)]).join();
     final DateTime now = DateTime.now();
     return 'TXN-${now.year}${_pad(now.month)}${_pad(now.day)}-$suffix';
   }

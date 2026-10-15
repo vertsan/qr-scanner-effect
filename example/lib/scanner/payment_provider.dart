@@ -20,7 +20,8 @@ import 'package:flutter/foundation.dart';
 @immutable
 class PaymentProvider {
   /// Creates a payment method.
-  const PaymentProvider({required this.id, required this.label, this.logoAsset});
+  const PaymentProvider(
+      {required this.id, required this.label, this.logoAsset});
 
   /// A stable identifier, for keys and analytics.
   final String id;

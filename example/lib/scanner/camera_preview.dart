@@ -34,7 +34,8 @@ class CameraPreview extends StatelessWidget {
     final double topInset = MediaQuery.paddingOf(context).top;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: ScannerStyle.previewInset),
+      padding:
+          const EdgeInsets.symmetric(horizontal: ScannerStyle.previewInset),
       child: ClipRRect(
         borderRadius: const BorderRadius.vertical(
           bottom: Radius.circular(ScannerStyle.previewRadius),
@@ -66,7 +67,8 @@ class CameraPreview extends StatelessWidget {
               Align(
                 alignment: Alignment.topCenter,
                 child: Padding(
-                  padding: EdgeInsets.only(top: topInset + 8, left: 4, right: 4),
+                  padding:
+                      EdgeInsets.only(top: topInset + 8, left: 4, right: 4),
                   child: header,
                 ),
               ),

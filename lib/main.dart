@@ -210,6 +210,7 @@ class _ScannerPageState extends State<ScannerPage>
     frameShape: ScanFrameShape.cornersOnly,
     beamStyle: ScanBeamStyle.softGradientBar,
     lockStyle: ScanLockStyle.smoothMorph,
+    successStyle: ScanSuccessStyle.none,
   );
 
   // The success dialog's own entrance and coin burst. The dialog is this page's
@@ -723,9 +724,7 @@ class _PillButton extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: radius,
                 border: Border.all(
-                  color: enabled && active
-                      ? Colors.transparent
-                      : _C.pillBorder,
+                  color: enabled && active ? Colors.transparent : _C.pillBorder,
                 ),
               ),
               child: Row(
@@ -1202,7 +1201,6 @@ class _CardBody extends StatelessWidget {
           style: const TextStyle(color: _C.muted, fontSize: 13.5),
         ),
         const SizedBox(height: 18),
-
         if (r.isKhqr && r.amount != null) ...<Widget>[
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1231,7 +1229,6 @@ class _CardBody extends StatelessWidget {
           ),
           const SizedBox(height: 14),
         ],
-
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
@@ -1240,14 +1237,14 @@ class _CardBody extends StatelessWidget {
               if (r.isKhqr) ...<Widget>[
                 _Row('Merchant', r.merchant ?? '—'),
                 if (r.city != null) _Row('City', r.city!),
-                if (r.currency != null) _Row('Currency', r.currency!, last: true),
+                if (r.currency != null)
+                  _Row('Currency', r.currency!, last: true),
               ] else
                 _Row('Content', r.raw, last: true, wrap: true),
             ],
           ),
         ),
         const SizedBox(height: 18),
-
         Row(
           children: <Widget>[
             Expanded(
