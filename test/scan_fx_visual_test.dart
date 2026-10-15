@@ -176,7 +176,7 @@ Future<int> _signature(QrScanFxTheme theme) =>
 
 /// Ink per probe for one layer rendered on its own, so "this style draws" can
 /// be asserted without the rest of the stack masking it.
-Future<int> _singleLayerInk(ScanLayer layer, QrScanFxTheme theme) async {
+Future<int> singleLayerInk(ScanLayer layer, QrScanFxTheme theme) async {
   var total = 0;
   for (final _Probe probe in _probes) {
     final _Render r = await _renderStack(
@@ -234,7 +234,7 @@ void main() {
           ScanFxRegistry.buildStack(theme),
           theme,
         );
-        inks[value] = await _singleLayerInk(layer(value), theme);
+        inks[value] = await singleLayerInk(layer(value), theme);
       }
 
       for (final T value in values) {
@@ -415,7 +415,7 @@ void main() {
       'minimalLight': QrScanFxTheme.minimalLight,
     };
 
-    Future<int> _stackInk(QrScanFxTheme theme) async {
+    Future<int> stackInk(QrScanFxTheme theme) async {
       var total = 0;
       for (final _Probe probe in _probes) {
         total += (await _renderStack(
@@ -431,7 +431,7 @@ void main() {
       final Map<String, int> signatures = <String, int>{};
       for (final ScanPreset preset in ScanPreset.values) {
         final QrScanFxTheme theme = ScanFxRecipes.theme(preset);
-        expect(await _stackInk(theme), greaterThan(0),
+        expect(await stackInk(theme), greaterThan(0),
             reason: '${preset.name} drew nothing');
         signatures[preset.name] = await _signature(theme);
       }
@@ -447,7 +447,7 @@ void main() {
     test('every named theme renders, and no two look alike', () async {
       final Map<String, int> signatures = <String, int>{};
       for (final MapEntry<String, QrScanFxTheme> e in named.entries) {
-        expect(await _stackInk(e.value), greaterThan(0),
+        expect(await stackInk(e.value), greaterThan(0),
             reason: '${e.key} drew nothing');
         signatures[e.key] = await _signature(e.value);
       }
@@ -473,6 +473,5 @@ void main() {
         }
       }
     });
-  });
   });
 }
