@@ -27,6 +27,7 @@ bounding box or four corner points — and returns pixels.
 - [Why it exists](#why-it-exists)
 - [Install](#install)
 - [Quick start](#quick-start)
+- [API at a glance](#api-at-a-glance)
 - [Two ways to drive it](#two-ways-to-drive-it)
 - [Keeping geometry aligned with the preview](#keeping-geometry-aligned-with-the-preview)
 - [Lifecycle states](#lifecycle-states)
@@ -151,6 +152,35 @@ class _ScannerPageState extends State<ScannerPage> {
 Pass the camera preview as `child` and the overlay draws on top of it. When
 `child` is omitted the overlay renders standalone over whatever is behind it,
 which is what makes it testable and screenshot-able without a camera.
+
+---
+
+## API at a glance
+
+Everything below is exported from `package:qr_scan_fx/qr_scan_fx.dart`. The
+full reference is the dartdoc on each type.
+
+| Type | What it is |
+| --- | --- |
+| `QrScanFx` | The overlay widget. Imperative (`controller:`) or declarative (`state:` + `detectedBounds:` / `detectedCorners:`), with `preset(...)` and `banking(...)` factories and `child`, `layers`, `onStateChanged` slots. |
+| `QrScanFxController` | A `ChangeNotifier` + `ValueListenable<ScanFxState>`. `start()`, `lockOn(target)`, `success()`, `error([message])`, `invalid([message])`, `reset()`, `pause()` / `resume()`, `setTunables(...)`. Takes geometry, never text. |
+| `ScanFxTarget` | The geometry that goes in: `.rect(...)` or `.corners(...)`, optionally `normalized` and mirrored. |
+| `ScanGeometryMapper` | Maps a sensor-space target into widget space for `BoxFit.cover` / `contain`, with mirroring and quarter turns. |
+| `QrScanFxTheme` | The `ThemeExtension` holding every colour, stroke, shape and style, plus 14 presets, `fromColorScheme`, `random`, `copyWith` and `lerp`. |
+| `ScanFxTunables` | Runtime knobs (intensity, speed, glow, corner radius, beam thickness, blur) that change without resetting an animation. |
+| `ScanFxMotion` / `ScanFxEasing` | The duration, curve and spring table, overridable per theme. |
+| `ScanFxRecipes` / `ScanPreset` | The five one-line looks. |
+| `ScanLayerStack` / `ScanLayerEntry` | The ordered layer list, with `insert`, `replace`, `remove`, `hide`, `show`. |
+| `ScanLayer` / `CustomScanLayer` | The base class and the host-facing escape hatch for a bespoke painter. |
+| `ScanFrameLayer`, `ScanCornerLayer`, `ScanBeamLayer`, `ScanBackdropLayer`, `ScanReticleLayer`, `ScanEffectLayer`, `ScanHintLayer` (+ `ScanHintView`) | The per-kind bases, for subclassing a style rather than writing one from scratch. |
+| `ScanFxState` / `ScanFxStateMachine` / `ScanFxTrigger` | The lifecycle enum and the pure-Dart machine behind it, usable headless. |
+| `ScanFxFrame` | The immutable per-tick snapshot every layer reads. |
+| `ScanFxQuad` / `ScanFxShapes` | The animatable quadrilateral and the path maths on top of it. |
+| `ScanFxIdleModifier` / `ScanFxIdleTransform` | The ambient-motion modifier contract. |
+| `ScanFxSemanticsLabels` | The localisable spoken labels for each state. |
+| `ScanFxPalette` | Colour helpers, including `ensureContrast`. |
+| `ScanFxRegistry` | The enum-to-implementation mapping (the only place the two meet). |
+| `ScanFxStatusNotice` | The default banking failure pill, used by `QrScanFx.banking`. |
 
 ---
 
@@ -636,9 +666,11 @@ enforced by `test/scan_fx_security_test.dart`, which reads every file under
 calls `print`.
 
 **Can I use it with `mobile_scanner`?**
-Yes — that is what the bundled demo does. Feed `BarcodeCapture.barcodes.first`
-`corners` into `controller.detected(corners)`; the geometry mapper handles
-`BoxFit.cover` / `contain`, mirroring, quarter turns and rotated targets.
+Yes — that is what the bundled demo does. Feed
+`BarcodeCapture.barcodes.first.corners` into
+`controller.lockOn(ScanFxTarget.corners(corners, normalized: true))`; the
+geometry mapper handles `BoxFit.cover` / `contain`, mirroring, quarter turns and
+rotated targets.
 
 **Why is `mobile_scanner` only a dev dependency?**
 Because the package must not require a camera. It ships zero runtime dependencies
@@ -725,11 +757,15 @@ lib/
     theme/                     # ThemeExtension, styles, motion, tunables, labels
     widget/                    # the QrScanFx widget + ScanFxStatusNotice
   main.dart                    # dev-only camera host (the runnable demo)
-example/                       # camera-free demos driven through the public API
-  lib/main.dart                # a chooser for the three demos
-  lib/style_studio.dart        # every style family, live
-  lib/banking_demo.dart        # a calm payment flow
-  lib/banking_camera_demo.dart # the same flow against a real camera
+example/                       # the demos, all driven through the public API
+  lib/main.dart                # a chooser for the four demos
+  lib/style_studio.dart        # every frame, corner, beam and effect, live
+  lib/banking_demo.dart        # a calm payment flow, scripted (no camera)
+  lib/banking_camera_demo.dart # the full flow: camera, torch, gallery, KHQR
+  lib/scanner/                 # the camera screen, split into small widgets
+  lib/payment/                 # KHQR parsing, confirmation, receipts, history
+  lib/theme.dart               # the demos' own Material theme
+  test/                        # tests for the KHQR and receipt logic
 test/                          # widget, state-machine, registry, visual, banking,
                                #   recipe and security tests
 tool/
@@ -741,6 +777,10 @@ doc/
   payment-qr-guide.md          # using the overlay in a payment flow
 ```
 
+`example/lib/payment/khqr.dart` is worth reading on its own: it is the *host's*
+half of the boundary — it parses an EMVCo/KHQR payload into a merchant, an
+amount and a currency, and never hands the payload to the overlay.
+
 The public API is re-exported from `lib/qr_scan_fx.dart`. Importing that file is
 all a host needs.
 
@@ -750,7 +790,8 @@ all a host needs.
 
 ```bash
 flutter analyze          # also run inside example/
-flutter test
+flutter test             # the package suite
+(cd example && flutter test)   # the example's own tests
 ```
 
 The suite covers the full `idle → … → reset` lifecycle, repeated detections not

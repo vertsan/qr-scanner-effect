@@ -1259,9 +1259,10 @@ class _CardBody extends StatelessWidget {
                   );
                 },
                 icon: const Icon(Icons.copy_rounded, size: 18),
-                label: const Text('Copy'),
+                label: const Text('Copy', maxLines: 1, softWrap: false),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: _C.ink,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
                   side: const BorderSide(color: _C.line, width: 1.5),
                   minimumSize: const Size.fromHeight(50),
                   shape: RoundedRectangleBorder(

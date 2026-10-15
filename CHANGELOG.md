@@ -67,6 +67,10 @@ that could accept, store, log or transmit decoded content.
 
 - Built for Dart `>=3.4.0` and Flutter `>=3.19.0`. Android, iOS, web, macOS,
   Windows and Linux.
+- The repository ships a runnable camera demo (`lib/main.dart`), four examples
+  under `example/` — a camera-free banking flow, a full KHQR payment flow with a
+  real camera, a live Style Studio, and a scan-history screen — and the generated
+  previews under `screenshots/` that appear on the pub.dev page.
 - `mobile_scanner` is a **dev** dependency, used only by the camera host that
   ships with the repository (`lib/main.dart`) and by the examples. It is not part
   of the published package.

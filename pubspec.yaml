@@ -23,13 +23,13 @@ screenshots:
     path: screenshots/hero_banking_locked.png
   - description: Banking mode reporting an unreadable code, with a retry prompt.
     path: screenshots/hero_banking_invalid.png
-  - description: The cyberpunk recipe.
+  - description: The cyberpunk recipe — electric cyan and violet with a hard beam.
     path: screenshots/recipe_cyberpunk_locked.png
-  - description: The appleVision recipe.
+  - description: The appleVision recipe — a soft squircle frame over a follow-spot.
     path: screenshots/recipe_apple_vision_locked.png
-  - description: The retroLaser recipe.
+  - description: The retroLaser recipe — a straight-edged frame and a scanline.
     path: screenshots/recipe_retro_laser_locked.png
-  - description: The playfulPop recipe.
+  - description: The playfulPop recipe — capsule corners and a pulse-ring beam.
     path: screenshots/recipe_playful_pop_locked.png
 
 environment:

@@ -38,7 +38,7 @@
 /// ### Learn more
 ///
 /// * [QrScanFx] — the overlay widget, and its declarative mode.
-/// * [QrScanFxTheme] — the full visual configuration, plus twelve presets.
+/// * [QrScanFxTheme] — the full visual configuration, plus fourteen presets.
 /// * [ScanLayerStack] — reorder, hide or replace any layer.
 /// * `doc/architecture.md` — layering, performance budget, security boundary.
 library;

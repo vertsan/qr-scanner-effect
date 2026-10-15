@@ -30,8 +30,10 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
-/coverage/
+# Recursive, not root-only: the example is a nested Flutter project with its own
+# build/ and coverage/ output, and artifacts there must never be committed.
+build/
+coverage/
 
 # Symbolication related
 app.*.symbols
