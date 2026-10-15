@@ -1,28 +1,30 @@
-// Generates preview screenshots for pub.dev.
+// Generates preview screenshots for the pub.dev page.
 //
-// This mirrors the visual probe that the regression tests use, so screenshots
-// are portable and consistent: it renders the full stack for a few canonical
-// themes and a few canonical states, saving lossless PNGs under screenshots/.
+// This mirrors the probe that the regression tests use, so the shots are
+// reproducible: it rasterises the full layer stack for a few canonical themes
+// across the handful of states worth showing, and writes lossless PNGs under
+// `screenshots/`.
 //
-// Run from the package root:
+// `dart:ui` only exists inside a Flutter engine, so this runs through the test
+// harness rather than the plain VM. It lives outside `test/`, so a normal
+// `flutter test` does not pick it up:
 //
-//   dart run tool/generate_screenshots.dart
+//   flutter test tool/generate_screenshots.dart
 
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart' as material;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qr_scan_fx/qr_scan_fx.dart';
 
-/// Size of the hero and preview shots.
+/// Size of every preview shot.
 const ui.Size _size = ui.Size(320, 320);
 
-/// A neutral background, so a "doesn't draw" guard is trivial.
+/// A neutral background, so a "draws nothing" mistake is obvious by eye.
 const ui.Color _ground = ui.Color(0xFF151B28);
 
-/// Canonical states used to show the lifecycle at a glance.
+/// Canonical moments of the lifecycle.
 const List<_Shot> _shots = <_Shot>[
   _Shot('idle', ScanFxState.idle, 0, 0),
   _Shot('scanning', ScanFxState.scanning, 0, 0, pulse: 0),
@@ -32,6 +34,39 @@ const List<_Shot> _shots = <_Shot>[
   _Shot('invalid', ScanFxState.invalid, 1, 0.28),
 ];
 
+/// The themes worth putting on a store page.
+final List<_ThemeShot> _themes = <_ThemeShot>[
+  _ThemeShot('hero_dark', QrScanFxTheme.dark),
+  _ThemeShot('hero_banking', QrScanFxTheme.bankingBlue),
+  _ThemeShot('recipe_cyberpunk', ScanFxRecipes.theme(ScanPreset.cyberpunk)),
+  _ThemeShot(
+      'recipe_apple_vision', ScanFxRecipes.theme(ScanPreset.appleVision)),
+  _ThemeShot('recipe_retro_laser', ScanFxRecipes.theme(ScanPreset.retroLaser)),
+  _ThemeShot('recipe_playful_pop', ScanFxRecipes.theme(ScanPreset.playfulPop)),
+];
+
+void main() {
+  test('renders the pub.dev screenshots', () async {
+    final Directory shots = Directory('screenshots');
+    if (!shots.existsSync()) {
+      shots.createSync(recursive: true);
+    }
+
+    var written = 0;
+    for (final _ThemeShot theme in _themes) {
+      for (final _Shot shot in _shots) {
+        final File file = File('${shots.path}/${theme.slug}_${shot.name}.png');
+        await _write(file, theme.theme, shot);
+        written++;
+      }
+    }
+
+    stdout.writeln('wrote $written screenshots to ${shots.path}/');
+    expect(written, _themes.length * _shots.length);
+  });
+}
+
+/// One moment worth rendering.
 class _Shot {
   const _Shot(
     this.name,
@@ -48,38 +83,9 @@ class _Shot {
   final double pulse;
 }
 
-Future<void> main() async {
-  // The Flutter binding isn't strictly required for a pure `dart:ui` render, but
-  // `WidgetsFlutterBinding` is exported from `package:flutter/material.dart`
-  // used for other tooling. Import the binding instead of pulling the whole
-  // widget tree test helpers.
-  material.WidgetsFlutterBinding.ensureInitialized();
-
-  final Directory shots = Directory('screenshots');
-  if (!shots.existsSync()) {
-    shots.createSync();
-  }
-
-  final List<_ThemeShot> themes = <_ThemeShot>[
-    _ThemeShot('hero_dark', QrScanFxTheme.dark),
-    _ThemeShot('hero_banking', QrScanFxTheme.bankingBlue),
-    _ThemeShot('recipe_cyberpunk', ScanFxRecipes.theme(ScanPreset.cyberpunk)),
-    _ThemeShot('recipe_appl_vision', ScanFxRecipes.theme(ScanPreset.appleVision)),
-    _ThemeShot('recipe_retro', ScanFxRecipes.theme(ScanPreset.retroLaser)),
-    _ThemeShot('recipe_playful', ScanFxRecipes.theme(ScanPreset.playfulPop)),
-  ];
-
-  for (final _ThemeShot theme in themes) {
-    for (final _Shot shot in _shots) {
-      final File f = File('screenshots/${theme.slug}_${shot.name}.png');
-      await _write(f, theme.theme, shot);
-      stdout.writeln('wrote ${f.path}');
-    }
-  }
-}
-
+/// One theme, under a filename-safe slug.
 class _ThemeShot {
-  _ThemeShot(this.slug, this.theme);
+  const _ThemeShot(this.slug, this.theme);
 
   final String slug;
   final QrScanFxTheme theme;
@@ -125,8 +131,12 @@ Future<void> _write(File file, QrScanFxTheme theme, _Shot shot) async {
   }
 
   final ui.Picture picture = recorder.endRecording();
-  final ui.Image image = await picture.toImage(320, 320);
-  final ByteData? bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+  final ui.Image image = await picture.toImage(
+    _size.width.toInt(),
+    _size.height.toInt(),
+  );
+  final ByteData? bytes =
+      await image.toByteData(format: ui.ImageByteFormat.png);
   picture.dispose();
   image.dispose();
 

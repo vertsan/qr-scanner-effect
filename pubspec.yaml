@@ -3,14 +3,34 @@ description: >-
   Premium, canvas-drawn QR scanner overlay for Flutter: focus frames, corner
   brackets, scan beams, spring lock-on, success effects, banking mode.
 version: 0.1.0
-repository: https://github.com/qr-scan-fx/qr_scan_fx
-issue_tracker: https://github.com/qr-scan-fx/qr_scan_fx/issues
+repository: https://github.com/vertsan/qr-scanner-effect
+issue_tracker: https://github.com/vertsan/qr-scanner-effect/issues
 topics:
   - qr
   - scanner
   - animation
   - ui
   - camera
+
+screenshots:
+  - description: The dark theme while scanning, with the beam mid-sweep.
+    path: screenshots/hero_dark_scanning.png
+  - description: The dark theme locked onto a target after the spring settles.
+    path: screenshots/hero_dark_locked.png
+  - description: The success burst in the dark theme.
+    path: screenshots/hero_dark_success.png
+  - description: Banking mode — calm, neutral, and free of particles and glitch.
+    path: screenshots/hero_banking_locked.png
+  - description: Banking mode reporting an unreadable code, with a retry prompt.
+    path: screenshots/hero_banking_invalid.png
+  - description: The cyberpunk recipe.
+    path: screenshots/recipe_cyberpunk_locked.png
+  - description: The appleVision recipe.
+    path: screenshots/recipe_apple_vision_locked.png
+  - description: The retroLaser recipe.
+    path: screenshots/recipe_retro_laser_locked.png
+  - description: The playfulPop recipe.
+    path: screenshots/recipe_playful_pop_locked.png
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

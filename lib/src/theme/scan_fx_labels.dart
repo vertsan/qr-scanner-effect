@@ -20,7 +20,7 @@ class ScanFxSemanticsLabels {
     this.invalid = 'Invalid code',
   });
 
-  /// Announced in [ScanFxState.idle].
+  /// Announced in [ScanFxState.idle], and drawn as the idle hint pill's copy.
   final String idle;
 
   /// Announced in [ScanFxState.scanning].
@@ -44,7 +44,6 @@ class ScanFxSemanticsLabels {
   /// Announced in [ScanFxState.invalid].
   final String invalid;
 
-
   /// The label for [state].
   String labelFor(ScanFxState state) => switch (state) {
         ScanFxState.idle => idle,
@@ -65,7 +64,6 @@ class ScanFxSemanticsLabels {
     String? success,
     String? error,
     String? invalid,
-    String? tapToStart,
   }) =>
       ScanFxSemanticsLabels(
         idle: idle ?? this.idle,
@@ -87,7 +85,6 @@ class ScanFxSemanticsLabels {
       other.success == success &&
       other.error == error &&
       other.invalid == invalid;
-
 
   @override
   int get hashCode => Object.hash(

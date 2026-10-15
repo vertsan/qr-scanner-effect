@@ -86,7 +86,11 @@ class ScanHintView extends StatelessWidget {
                     horizontal: 16,
                     vertical: 9,
                   ),
-                 
+                  child: Text(
+                    theme.labels.idle,
+                    style: theme.resolvedHintStyle,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
             ),

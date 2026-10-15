@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, dev]
+  pull_request:
+
+# A second push to the same branch makes the first run pointless.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Analyze, format and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed lib test tool example
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Analyze the example
+        working-directory: example
+        run: |
+          flutter pub get
+          flutter analyze
+
+      - name: Test
+        run: flutter test --coverage
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/lcov.info
+          if-no-files-found: ignore
+
+  publish:
+    name: Publish dry run
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # The authoritative gate: this is exactly what `dart pub publish` runs on
+      # the upload. It fails on a bad layout, a missing description, a `lib/`
+      # that imports a dev dependency, and so on.
+      - name: Publish dry run
+        run: flutter pub publish --dry-run
+
+      # pana is reported but deliberately not gated: its score is a moving target
+      # across pana versions and it reaches out to pub.dev, so a network blip
+      # must not fail a release build. Regressions stay visible in the log.
+      - name: Report pana score
+        continue-on-error: true
+        run: |
+          dart pub global activate pana
+          dart pub global run pana --no-warning .

@@ -9,6 +9,17 @@ single `CustomPaint`.
 decodes anything, and never sees QR content. It takes **geometry only** — a
 bounding box or four corner points — and returns pixels.
 
+<p align="center">
+  <img src="screenshots/hero_dark_scanning.png" width="24%" alt="Dark theme, scanning">
+  <img src="screenshots/hero_dark_locked.png" width="24%" alt="Dark theme, locked on a target">
+  <img src="screenshots/hero_dark_success.png" width="24%" alt="Dark theme, success burst">
+  <img src="screenshots/hero_banking_locked.png" width="24%" alt="Banking mode, calm and neutral">
+</p>
+
+<p align="center">
+  <em>Scanning → locked → success in the dark theme, then banking mode.</em>
+</p>
+
 ---
 
 ## Table of contents
@@ -21,12 +32,15 @@ bounding box or four corner points — and returns pixels.
 - [Lifecycle states](#lifecycle-states)
 - [Themes](#themes)
 - [Style vocabulary](#style-vocabulary)
+- [The style gallery](#the-style-gallery)
 - [Customizing the layer stack](#customizing-the-layer-stack)
 - [Live tuning](#live-tuning)
 - [Accessibility](#accessibility)
 - [Banking mode](#banking-mode)
 - [Security model](#security-model)
 - [Performance](#performance)
+- [FAQ](#faq)
+- [Contributing](#contributing)
 - [Requirements](#requirements)
 - [Project layout](#project-layout)
 - [Testing](#testing)
@@ -325,14 +339,17 @@ switches (and therefore golden coverage) possible.
 
 | Category | Values |
 | --- | --- |
-| Frame shape | `roundedSquare`, `squircle`, `circle`, `cornersOnly` |
-| Corner brackets | `rounded`, `sharp`, `dot` |
-| Beam | `line`, `softGradientBar`, `glowingLaser` |
-| Backdrop | `solidDim`, `blurredFrost`, `vignette`, `gradientFade`, `none` |
-| Lock-on | `springSnap`, `smoothMorph`, `zoomIn`, `none` |
-| Success | `checkMorph`, `colorWash`, `glowFlash`, `none` |
-| Error | `shake`, `redPulse`, `fadeBlink`, `none` |
+| Frame shape | `roundedSquare`, `squircle`, `circle`, `cornersOnly`, `hexagon`, `diamond`, `fullBorder`, `dashedBorder`, `viewfinderCross` |
+| Corner brackets | `rounded`, `sharp`, `dot`, `chamfered`, `pill`, `doubleLine`, `glowing`, `animatedDraw` |
+| Beam | `line`, `softGradientBar`, `glowingLaser`, `doubleLaser`, `radar`, `gridScan`, `dotMatrix`, `waveform`, `pulseRings`, `aurora`, `none` |
+| Backdrop | `solidDim`, `blurredFrost`, `vignette`, `gradientFade`, `spotlight`, `none` |
+| Lock-on | `springSnap`, `smoothMorph`, `zoomIn`, `pulseLock`, `ringContract`, `scanlineSweepOver`, `particleBurst`, `glitchLock`, `none` |
+| Success | `checkMorph`, `colorWash`, `glowFlash`, `rippleWaves`, `confetti`, `cornersFlash`, `none` |
+| Error | `shake`, `redPulse`, `fadeBlink`, `glitch`, `crossMorph`, `none` |
 | Idle motion | `breathing`, `floating`, `shimmer`, `still` |
+
+That is **60 styles across 8 families** (`none` included so every family has a
+switch-off value).
 
 `frameShape` and `cornerStyle` are independent layers, so a `circle` frame can
 pair with `sharp` brackets. Idle motion is a *modifier* applied to the shared
@@ -355,6 +372,41 @@ theme: QrScanFxTheme.dark.copyWith(
   backdrop: const ScanBackdropOptions(feather: 22, dimOpacity: 0.6),
 )
 ```
+
+---
+
+## The style gallery
+
+Every combination of the eight families is supported, and the styles are
+independent by design — a hexagon frame with `chamfered` brackets and an `aurora`
+beam is a valid theme, not a special case.
+
+| | |
+| --- | --- |
+| <img src="screenshots/recipe_cyberpunk_locked.png" width="180" alt="Cyberpunk recipe"> **`cyberpunk`** | <img src="screenshots/recipe_apple_vision_locked.png" width="180" alt="Apple Vision recipe"> **`appleVision`** |
+| <img src="screenshots/recipe_retro_laser_locked.png" width="180" alt="Retro Laser recipe"> **`retroLaser`** | <img src="screenshots/recipe_playful_pop_locked.png" width="180" alt="Playful Pop recipe"> **`playfulPop`** |
+
+The five recipes are one-liners:
+
+```dart
+QrScanFx.preset(ScanPreset.cyberpunk, controller: controller)
+```
+
+…and can be tweaked like any other theme by going through the plain
+constructor:
+
+```dart
+QrScanFx(
+  controller: controller,
+  theme: ScanFxRecipes.theme(ScanPreset.appleVision).copyWith(
+    cornerStyle: ScanCornerStyle.animatedDraw,
+  ),
+)
+```
+
+To browse the whole surface without writing a demo, run the **Style Studio** in
+`example/`: it puts every family on a segmented control and updates the overlay
+live, so a look can be found by clicking rather than recompiling.
 
 ---
 
@@ -569,6 +621,85 @@ opens the boundary, a test fails before a review does.
 
 ---
 
+## FAQ
+
+**Does this package use the camera?**
+No. It draws an overlay and nothing else. You supply geometry — a `Rect` or four
+`Offset`s — from whatever detector you already trust (`mobile_scanner`, ML Kit,
+`zxing`, a server, a test fixture). See [Security model](#security-model).
+
+**Does the overlay ever see the decoded text?**
+There is no parameter anywhere in the public API that accepts it. The rule is
+enforced by `test/scan_fx_security_test.dart`, which reads every file under
+`lib/src/` and fails if one mentions `rawValue`, `displayValue`, `barcode`,
+`decodedText` or `payloadText`, imports a forbidden library, opens a channel or
+calls `print`.
+
+**Can I use it with `mobile_scanner`?**
+Yes — that is what the bundled demo does. Feed `BarcodeCapture.barcodes.first`
+`corners` into `controller.detected(corners)`; the geometry mapper handles
+`BoxFit.cover` / `contain`, mirroring, quarter turns and rotated targets.
+
+**Why is `mobile_scanner` only a dev dependency?**
+Because the package must not require a camera. It ships zero runtime dependencies
+besides the Flutter SDK; the demo host and the examples pull the camera in.
+
+**How do I stop the overlay from animating?**
+It already does when it can: the ticker stops in terminal states once the burst
+finishes and for the whole duration of `pause()`. To stop *visually*, respect
+reduce motion (which the package honours automatically) or set the idle motion to
+`ScanIdleStyle.still` and the beam to `ScanBeamStyle.none`.
+
+**Is it accessible?**
+`MediaQuery.disableAnimations` is honoured by rendering effects to their steady
+state rather than skipping transitions, so no state is lost. The lifecycle is a
+`Semantics(liveRegion: true)` with labels from `ScanFxSemanticsLabels`, and
+directions follow `TextDirection`. `QrScanFxTheme.bankingBlue` keeps body text at
+4.5:1 or better and survives a 2.0 text scale.
+
+**Can I add my own style?**
+You don't extend the enums — they are closed so switches stay exhaustive.
+Instead, insert a `CustomScanLayer` (or a subclass of one of the layer bases)
+into the stack with `ScanLayerStack.insert` / `.replace`. That is how the built-in
+styles are written.
+
+**Does it work on web and desktop?**
+Yes. It is pure Dart/Flutter with no platform channels, and it is tested on
+Android, iOS, web, macOS, Windows and Linux.
+
+---
+
+## Contributing
+
+Contributions are welcome. Before opening a pull request:
+
+```bash
+dart format .
+flutter analyze          # also run inside example/
+flutter test
+```
+
+Style rules that are not optional here:
+
+- **One style per file.** A new style is a small class plus one arm in
+  `ScanFxRegistry`; keep it that size.
+- **No allocation in `paint()`.** Reuse cached `Paint`/`Path`/geometry; the frame
+  snapshot is immutable and shared.
+- **Nothing reads QR content.** The security test is the gate, not review.
+- **Every style needs coverage.** The registry tests paint every value in every
+  state; the visual tests assert that each family draws and that no two values in
+  a family render the same picture.
+- **Documentation is part of the change.** Public API needs dartdoc; behaviour
+  changes update `doc/` and `CHANGELOG.md`.
+
+Regenerate the pub.dev screenshots after a visual change:
+
+```bash
+flutter test tool/generate_screenshots.dart
+```
+
+---
+
 ## Requirements
 
 - Dart SDK `>=3.4.0 <4.0.0`
@@ -595,9 +726,15 @@ lib/
     widget/                    # the QrScanFx widget + ScanFxStatusNotice
   main.dart                    # dev-only camera host (the runnable demo)
 example/                       # camera-free demos driven through the public API
+  lib/main.dart                # a chooser for the three demos
+  lib/style_studio.dart        # every style family, live
   lib/banking_demo.dart        # a calm payment flow
-test/                          # widget, state-machine, registry, banking,
+  lib/banking_camera_demo.dart # the same flow against a real camera
+test/                          # widget, state-machine, registry, visual, banking,
                                #   recipe and security tests
+tool/
+  generate_screenshots.dart    # renders screenshots/ for the pub.dev page
+screenshots/                   # the generated previews (committed)
 doc/
   architecture.md              # layering, data flow, performance, security
   animation-spec.md            # the timing and spring spec
@@ -612,7 +749,7 @@ all a host needs.
 ## Testing
 
 ```bash
-flutter analyze
+flutter analyze          # also run inside example/
 flutter test
 ```
 
@@ -624,6 +761,11 @@ recipe, the banking seats (confirmation, invalid message, retry, controls),
 4.5:1 banking contrast, 2.0 text scale, and the security boundary — which is
 checked against the source rather than promised, in
 `test/scan_fx_security_test.dart`.
+
+`test/scan_fx_visual_test.dart` rasterises the layer stack and asserts *derived*
+facts — every style draws (or is provably inert), no two values in a family render
+the same picture, every preset is distinct — instead of comparing to committed
+goldens, which cannot survive a platform change.
 
 ---
 
@@ -645,6 +787,14 @@ checked against the source rather than promised, in
 ## Status
 
 Version `0.1.0`. The overlay, controller, state machine, theme system, layer
-registry and geometry mapper are implemented and covered by tests. The package
-is not published to pub.dev yet, and there is no `example/` app, `CHANGELOG.md`
-or `LICENSE` file in the repository at this time.
+registry, geometry mapper and banking mode are implemented and covered by tests.
+The repository ships a runnable camera demo (`lib/main.dart`), three camera-free
+examples under `example/`, the three design documents under `doc/`, screenshots
+under `screenshots/`, and a release `CHANGELOG.md` and `LICENSE`.
+
+The package is ready to publish; it is not on pub.dev yet.
+
+`qr_scan_fx` is a renderer with a deliberately narrow contract. If your selector
+is a better `CustomPainter` than a `BorderRadius` can express, or if a payment
+flow needs a calm overlay that provably never touches the payload, that narrow
+contract is the whole point.

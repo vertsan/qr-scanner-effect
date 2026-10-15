@@ -199,6 +199,7 @@ class _ScannerPageState extends State<ScannerPage>
     frameColor: Colors.white,
     frameGlowColor: const Color(0xFFBBD4FF),
     cornerColor: Colors.white,
+    errorColor: Colors.transparent,
     beamColor: const Color(0xFFD8E6FF),
     backdropColor: _C.bg,
     backdropStyle: ScanBackdropStyle.solidDim,

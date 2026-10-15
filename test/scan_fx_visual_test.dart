@@ -216,11 +216,18 @@ void main() {
   /// [vary] swaps one family's style. [noop], if given, must be the value that
   /// draws nothing — and [noopKind] is the layer it stands in for, so "declared
   /// inert" can be checked against "actually removed".
+  ///
+  /// [base] is the theme the family is varied against. It defaults to
+  /// [QrScanFxTheme.dark], but a family whose styles differ only in *how
+  /// strongly* they draw needs a base where that difference is visible: the
+  /// corner family is the case in point, because `glowing` is documented as a
+  /// glow *floor* and `dark` already sits above it.
   Future<void> family<T extends Enum>({
     required String name,
     required List<T> values,
     required QrScanFxTheme Function(QrScanFxTheme, T) vary,
     required ScanLayer Function(T) layer,
+    QrScanFxTheme base = QrScanFxTheme.dark,
     T? noop,
     ScanLayerKind? noopKind,
   }) async {
@@ -229,7 +236,7 @@ void main() {
       final Map<T, int> inks = <T, int>{};
 
       for (final T value in values) {
-        final QrScanFxTheme theme = vary(QrScanFxTheme.dark, value);
+        final QrScanFxTheme theme = vary(base, value);
         signatures[value] = await _signatureOf(
           ScanFxRegistry.buildStack(theme),
           theme,
@@ -256,8 +263,8 @@ void main() {
       if (noop != null && noopKind != null) {
         // "Draws nothing" and "is not there" have to produce the same picture.
         final int removed = await _signatureOf(
-          ScanFxRegistry.buildStack(QrScanFxTheme.dark).remove(noopKind),
-          vary(QrScanFxTheme.dark, noop),
+          ScanFxRegistry.buildStack(base).remove(noopKind),
+          vary(base, noop),
         );
         expect(
           signatures[noop],
@@ -285,6 +292,8 @@ void main() {
       values: ScanFrameShape.values,
       vary: (QrScanFxTheme t, ScanFrameShape v) => t.copyWith(frameShape: v),
       layer: (v) => ScanFxRegistry.frame(v),
+      noop: ScanFrameShape.cornersOnly,
+      noopKind: ScanLayerKind.frame,
     );
 
     family<ScanCornerStyle>(
@@ -292,6 +301,9 @@ void main() {
       values: ScanCornerStyle.values,
       vary: (QrScanFxTheme t, ScanCornerStyle v) => t.copyWith(cornerStyle: v),
       layer: (v) => ScanFxRegistry.corners(v),
+      // `glowing` only changes anything on a theme whose bloom is weaker than
+      // its floor, so the family is compared where that difference exists.
+      base: QrScanFxTheme.dark.copyWith(glowStrength: 0),
     );
 
     family<ScanBeamStyle>(
@@ -366,7 +378,8 @@ void main() {
       final Map<String, ScanIdleStyle> seen = <String, ScanIdleStyle>{};
       for (final MapEntry<ScanIdleStyle, ScanFxIdleTransform> e
           in transforms.entries) {
-        final String key = '${e.value.scale}|${e.value.offset}|${e.value.shimmer}';
+        final String key =
+            '${e.value.scale}|${e.value.offset}|${e.value.shimmer}';
         expect(
           seen.containsKey(key),
           isFalse,
