@@ -1,15 +1,25 @@
-// Clean, banking-style host for the `qr_scan_fx` overlay.
+// The package's own demo — the reference's scanner screen, self-contained.
 //
 // pubspec.yaml (the root package, whose `flutter run` shows this page)
 //   flutter:
 //     uses-material-design: true   # fixes the broken icon glyphs
 //
-// What changed vs. the old demo
-//   • removed the "qr_scan_fx" pill and the "State: …" debug text
-//   • removed the check/tick animation (we no longer call _fx.success())
-//   • new header, torch state, hint card
-//   • success = clean white popup with a $ / ៛ coin burst
-//   • KHQR (ABA, ACLEDA, Wing, Bakong …) is parsed: amount, merchant, currency
+//   dev_dependencies:
+//     mobile_scanner: ^7.4.2       # the demo owns the camera
+//     image_picker: ^1.2.4         # ... and the gallery pick
+//   Both are dev dependencies on purpose: the published package stays free of
+//   runtime dependencies, so these imports are only allowed here because this
+//   file is the demo entrypoint.
+//
+// What this screen does
+//   • a near-black, nearly full-width camera card with rounded bottom corners
+//   • a header over the preview: a centred "QR Scan" title and a close button
+//   • a four-bracket (cornersOnly) frame, ~280–330 dp, that never boxes in the
+//     camera, with a soft sweep and a spring lock-on
+//   • two pill controls under the card: Flash (tracks the torch state) and
+//     Upload QR (decodes a gallery image)
+//   • a compact payment-methods strip under the controls
+//   • on a read: a calm success dialog with a $ / ៛ coin burst
 //
 // The host owns the camera and the decode; `qr_scan_fx` receives geometry only.
 
@@ -18,9 +28,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-// The demo drives a real camera. `mobile_scanner` is a *dev* dependency on
-// purpose: the published package stays free of runtime dependencies, so this
-// import is only allowed here because this file is the demo entrypoint.
+// Both are *dev* dependencies on purpose: the published package stays free of
+// runtime dependencies, so these imports are only allowed here because this
+// file is the demo entrypoint.
+// ignore: depend_on_referenced_packages
+import 'package:image_picker/image_picker.dart';
 // ignore: depend_on_referenced_packages
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_scan_fx/qr_scan_fx.dart';
@@ -29,14 +41,54 @@ void main() => runApp(const QrScanFxDemoApp());
 
 // ───────────────────────── Palette ─────────────────────────
 class _C {
+  // Scanner screen — the reference's neutral dark look.
+  static const bg = Color(0xFF000000);
+  static const pill = Color(0xFF1C1C1E);
+  static const pillBorder = Color(0xFF2E2E30);
+  static const pillActive = Color(0xFF7CB0FF);
+  static const onPillActive = Color(0xFF04213F);
+  static const onDisabled = Color(0x66FFFFFF);
+  static const providerTile = Color(0xFF141416);
+  static const providerTileBorder = Color(0xFF28282A);
+  static const providerLabel = Color(0xFFE6E6E8);
+  static const caption = Color(0xFF9FB3CC);
+
+  // The success dialog — the demo's own celebration, unchanged.
   static const navy = Color(0xFF071A3A);
   static const blue = Color(0xFF1D6FE8);
-  static const aqua = Color(0xFF38E1D0);
   static const gold = Color(0xFFF6B93B);
   static const goldDeep = Color(0xFFD48A12);
   static const ink = Color(0xFF0F1B33);
   static const muted = Color(0xFF6B7791);
   static const line = Color(0xFFE6EAF2);
+}
+
+/// Shared metrics for the scanner screen.
+abstract final class _M {
+  /// Side margin of the camera card, so it reads as nearly full-width.
+  static const double previewInset = 8;
+
+  /// Radius of the card's rounded bottom corners.
+  static const double previewRadius = 28;
+
+  /// Horizontal margin shared by the controls and the strip below the card.
+  static const double gutter = 20;
+
+  /// Height of a pill control. Comfortably past the 48 dp touch target.
+  static const double pillHeight = 52;
+
+  /// The largest the scan frame will grow.
+  static const double frameMaxSide = 330;
+
+  /// A frame this small no longer reads as a scanner.
+  static const double frameFloor = 120;
+
+  /// Space kept clear below the frame for the hint pill and the status notice.
+  static const double frameFootroom = 140;
+
+  /// Fixed tile size, so the payment-method labels line up.
+  static const double tileWidth = 84;
+  static const double tileHeight = 36;
 }
 
 class QrScanFxDemoApp extends StatelessWidget {
@@ -130,21 +182,37 @@ class _ScannerPageState extends State<ScannerPage>
     with WidgetsBindingObserver, TickerProviderStateMixin {
   final QrScanFxController _fx = QrScanFxController();
 
+  // Torch on, as the banking screen expects; the Flash pill tracks the real
+  // state rather than a local copy, so it stays honest when the device
+  // reports the torch as unavailable.
   final MobileScannerController _camera = MobileScannerController(
     detectionSpeed: DetectionSpeed.normal,
     formats: const <BarcodeFormat>[BarcodeFormat.qrCode],
+    torchEnabled: true,
   );
 
-  // Calmer look: white corners, soft aqua beam, very faint glow.
+  final ImagePicker _picker = ImagePicker();
+
+  // The reference's minimal scanner: white corners, no frame outline, a soft
+  // white sweep, and a dim surround that keeps the camera visible.
   final QrScanFxTheme _theme = QrScanFxTheme.dark.copyWith(
+    frameColor: Colors.white,
+    frameGlowColor: const Color(0xFFBBD4FF),
     cornerColor: Colors.white,
-    beamColor: _C.aqua,
-    frameGlowColor: const Color(0x3338E1D0),
+    beamColor: const Color(0xFFD8E6FF),
+    backdropColor: _C.bg,
+    backdropStyle: ScanBackdropStyle.solidDim,
+    cornerStyle: ScanCornerStyle.rounded,
+    cornerRadius: 24,
+    cornerStrokeWidth: 4.5,
+    cornerArmFraction: 0.2,
     frameShape: ScanFrameShape.cornersOnly,
-    beamStyle: ScanBeamStyle.glowingLaser,
-    lockStyle: ScanLockStyle.springSnap,
+    beamStyle: ScanBeamStyle.softGradientBar,
+    lockStyle: ScanLockStyle.smoothMorph,
   );
 
+  // The success dialog's own entrance and coin burst. The dialog is this page's
+  // seat for a read; the overlay only supplies the lock-on.
   late final AnimationController _pop = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 850),
@@ -155,17 +223,24 @@ class _ScannerPageState extends State<ScannerPage>
   );
 
   Size _sensorSize = Size.zero;
+
+  /// Guards against a stream of detections for the same code restarting the
+  /// lock-on or firing a second result.
   bool _settled = false;
-  bool _torch = false;
+
+  /// Guards the gallery pick, so a double tap cannot open two pickers.
+  bool _picking = false;
+
   ScanResult? _result;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Start after the first frame so the overlay is attached and the beam is
-    // already sweeping (no "Tap to start scanning" idle state).
-    WidgetsBinding.instance.addPostFrameCallback((_) => _fx.start());
+    // Leave `idle` so the beam is already sweeping before the first code. The
+    // overlay seeds its animation from the controller's current state when it
+    // attaches, so announcing this before the first build is safe.
+    _fx.start();
   }
 
   @override
@@ -191,32 +266,93 @@ class _ScannerPageState extends State<ScannerPage>
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Camera → overlay. Geometry only.
+  // ---------------------------------------------------------------------------
+
   void _onDetect(BarcodeCapture capture) {
     if (_settled || capture.barcodes.isEmpty) return;
     final Barcode code = capture.barcodes.first;
-
-    if (!capture.size.isEmpty && capture.size != _sensorSize) {
-      setState(() => _sensorSize = capture.size);
-    }
-
     final List<Offset> corners = code.corners;
-    if (corners.length != 4) return;
+    if (corners.length != 4) return; // Nothing to frame without corners.
 
     final String? raw = code.rawValue ?? code.displayValue;
     if (raw == null || raw.isEmpty) return;
 
     _settled = true;
-    _fx.lockOn(ScanFxTarget.corners(corners)); // frame snaps onto the code
+    if (!capture.size.isEmpty && capture.size != _sensorSize) {
+      setState(() => _sensorSize = capture.size);
+    }
+    // The decoded string is read here, by the app, and never crosses the
+    // overlay boundary: the package receives corners alone.
+    _fx.lockOn(ScanFxTarget.corners(corners));
 
-    // Let the lock-on land, then show our own success popup.
-    // (We intentionally do NOT call _fx.success(): that is the tick animation.)
-    Timer(const Duration(milliseconds: 650), () {
+    unawaited(_settle(raw));
+  }
+
+  Future<void> _settle(String raw) async {
+    // A medium tap is the confirmation that lands without startling anyone.
+    unawaited(HapticFeedback.mediumImpact());
+    await Future<void>.delayed(const Duration(milliseconds: 760));
+    if (!mounted) return;
+    _fx.success();
+    setState(() => _result = ScanResult.parse(raw));
+    unawaited(_pop.forward(from: 0));
+    unawaited(_burst.forward(from: 0));
+  }
+
+  // ---------------------------------------------------------------------------
+  // Gallery. Same overlay path, a different source of geometry.
+  // ---------------------------------------------------------------------------
+
+  Future<void> _pickFromGallery() async {
+    if (_picking || _settled) return;
+    setState(() => _picking = true);
+
+    try {
+      final XFile? file = await _picker.pickImage(source: ImageSource.gallery);
+      if (!mounted || file == null) return;
+
+      final BarcodeCapture? capture = await _camera.analyzeImage(file.path);
       if (!mounted) return;
-      HapticFeedback.mediumImpact();
-      setState(() => _result = ScanResult.parse(raw));
-      _pop.forward(from: 0);
-      _burst.forward(from: 0);
-    });
+
+      final List<Barcode> codes = capture?.barcodes ?? const <Barcode>[];
+      final Barcode? code = codes.isEmpty ? null : codes.first;
+      final List<Offset> corners = code?.corners ?? const <Offset>[];
+
+      if (corners.length != 4) {
+        _fx.invalid('No QR code found in that image');
+        return;
+      }
+      final String? raw = code?.rawValue ?? code?.displayValue;
+      if (raw == null || raw.isEmpty) {
+        _fx.invalid('That code carried no data');
+        return;
+      }
+      if (!capture!.size.isEmpty) {
+        setState(() => _sensorSize = capture.size);
+      }
+      _settled = true;
+      _fx.lockOn(ScanFxTarget.corners(corners));
+      await _settle(raw);
+    } on MobileScannerException {
+      if (mounted) _fx.invalid('That image could not be read');
+    } finally {
+      if (mounted) setState(() => _picking = false);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Small host actions.
+  // ---------------------------------------------------------------------------
+
+  void _toggleTorch() {
+    unawaited(HapticFeedback.selectionClick());
+    unawaited(_camera.toggleTorch());
+  }
+
+  void _retryCamera() {
+    unawaited(_camera.start());
   }
 
   void _scanAgain() {
@@ -227,16 +363,254 @@ class _ScannerPageState extends State<ScannerPage>
       _settled = false;
     });
     _fx.reset();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _fx.start());
+    _fx.start();
   }
 
-  Future<void> _toggleTorch() async {
-    await _camera.toggleTorch();
-    if (mounted) setState(() => _torch = !_torch);
+  void _close() {
+    final NavigatorState navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+      return;
+    }
+    // Run standalone this page *is* the first screen, so say so rather than
+    // leaving the button looking broken.
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('This demo opens on the scanner, so there is no screen '
+              'to return to.'),
+        ),
+      );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Composition.
+  // ---------------------------------------------------------------------------
+
+  Widget _cameraView() => MobileScanner(
+        controller: _camera,
+        fit: BoxFit.cover,
+        onDetect: _onDetect,
+        errorBuilder: (BuildContext context, MobileScannerException error) =>
+            _CameraError(error: error, onRetry: _retryCamera),
+        placeholderBuilder: (BuildContext context) => const _CameraLoading(),
+      );
+
+  Widget _overlay(Size? sensorSize) => LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          final Size size = constraints.biggest;
+          // Aim for the reference's 280–330 dp band, bound by the two things
+          // that can genuinely clip it: the card's width, and the room under
+          // the frame that the hint pill and the status notice need. The
+          // package additionally clamps the frame to 82% of the card's short
+          // side, so a very short card degrades gracefully.
+          final double widthBound = size.width - 32;
+          final double heightBound = size.height - _M.frameFootroom;
+          final double requested = math.max(
+            _M.frameFloor,
+            math.min(
+              math.min(widthBound, heightBound),
+              _M.frameMaxSide,
+            ),
+          );
+
+          return QrScanFx(
+            controller: _fx,
+            theme: _theme,
+            sensorSize: sensorSize,
+            previewFit: BoxFit.cover,
+            scanAreaSize: Size.square(requested),
+            // The camera is a sibling below this overlay, so nothing is painted
+            // over an error or a loading view.
+            //
+            // The package's default status seat sits inside the scan area,
+            // which would land on the frame; pin it to the foot of the card
+            // instead, level with where the hint pill appears.
+            messageBuilder: (BuildContext context) => Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: ScanFxStatusNotice(
+                  message: _fx.message,
+                  fallback: 'Invalid code',
+                  onRetry: _scanAgain,
+                  backgroundColor: const Color(0xB30B1220),
+                  foregroundColor: const Color(0xFFF2F6FC),
+                  maxWidth: 320,
+                ),
+              ),
+            ),
+          );
+        },
+      );
+
+  Widget _header(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        // An equal-width slot on the left keeps the title optically centred.
+        const SizedBox(width: 48),
+        Expanded(
+          child: Text(
+            'QR Scan',
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 48,
+          child: IconButton(
+            onPressed: _close,
+            tooltip: 'Close scanner',
+            icon: const Icon(Icons.close),
+            color: Colors.white,
+            iconSize: 24,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _flashButton(MobileScannerState state) {
+    final bool available = state.torchState != TorchState.unavailable;
+    final bool on = state.torchState == TorchState.on;
+    return _PillButton(
+      icon: on ? Icons.flashlight_on : Icons.flashlight_off,
+      label: 'Flash',
+      active: on,
+      onPressed: available ? _toggleTorch : null,
+      semanticLabel: available ? null : 'Flash unavailable on this device',
+    );
+  }
+
+  Widget _uploadButton() => _PillButton(
+        icon: Icons.photo_library_outlined,
+        label: 'Upload QR',
+        busy: _picking,
+        onPressed: _settled ? null : _pickFromGallery,
+      );
+
+  // The camera card: nearly full-width, rounded bottom corners, with a short
+  // top scrim so the status bar and the title stay legible over a bright frame.
+  Widget _preview(BuildContext context, bool failed, Size? sensorSize) {
+    final double topInset = MediaQuery.paddingOf(context).top;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: _M.previewInset),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(
+          bottom: Radius.circular(_M.previewRadius),
+        ),
+        child: ColoredBox(
+          color: _C.bg,
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              _cameraView(),
+              if (!failed) _overlay(sensorSize),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: topInset + 76,
+                child: const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: <Color>[Color(0xB3000000), Color(0x00000000)],
+                    ),
+                  ),
+                ),
+              ),
+              Align(
+                alignment: Alignment.topCenter,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    top: topInset + 8,
+                    left: 4,
+                    right: 4,
+                  ),
+                  child: _header(context),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Portrait: the card on top, the controls and the strip underneath. The card
+  // takes every pixel the controls do not need.
+  Widget _tall(BuildContext context, MobileScannerState state, bool failed,
+      Size? sensorSize) {
+    return Column(
+      children: <Widget>[
+        Expanded(child: _preview(context, failed, sensorSize)),
+        const SizedBox(height: 18),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: _M.gutter),
+          child: Row(
+            children: <Widget>[
+              Expanded(child: _flashButton(state)),
+              const SizedBox(width: 12),
+              Expanded(child: _uploadButton()),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
+        const _ProviderGrid(),
+        const SizedBox(height: 18),
+      ],
+    );
+  }
+
+  // Landscape: the card keeps the height it has, and the controls move to a
+  // column beside it instead of crushing it. The column scrolls, so a short
+  // window or a large text scale cannot overflow.
+  Widget _wide(BuildContext context, MobileScannerState state, bool failed,
+      Size? sensorSize) {
+    return Row(
+      children: <Widget>[
+        Expanded(flex: 3, child: _preview(context, failed, sensorSize)),
+        Expanded(
+          flex: 2,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: _M.gutter),
+                  child: Column(
+                    children: <Widget>[
+                      _flashButton(state),
+                      const SizedBox(height: 12),
+                      _uploadButton(),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const _ProviderGrid(),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    // mobile_scanner reports geometry in the sensor's upright orientation; in
+    // landscape the preview is the other way around. `previewFit` on the overlay
+    // must match `fit` on MobileScanner.
     final bool landscape =
         MediaQuery.orientationOf(context) == Orientation.landscape;
     final Size? sensorSize = _sensorSize.isEmpty
@@ -247,97 +621,30 @@ class _ScannerPageState extends State<ScannerPage>
     final bool done = _result != null;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: _C.bg,
       body: Stack(
         fit: StackFit.expand,
         children: <Widget>[
-          QrScanFx(
-            controller: _fx,
-            theme: _theme,
-            // The package's built-in hint reads "Tap to start scanning" and is
-            // shown while idle *and* scanning, so it never disappears on its
-            // own. This page has its own hint card, so hide the built-in one.
-            layers: (context, stack) => stack.hide(ScanLayerKind.hint),
-            sensorSize: sensorSize,
-            previewFit: BoxFit.cover,
-            onStateChanged: (_) {},
-            child: MobileScanner(
-              controller: _camera,
-              fit: BoxFit.cover,
-              onDetect: _onDetect,
-              errorBuilder: (context, error) => _CameraError(error: error),
-            ),
-          ),
-
-          // Soft top/bottom shading so text stays readable on any camera feed.
-          const IgnorePointer(child: _Shade()),
-
-          // Header
+          // The preview runs under the status bar on purpose; only the bottom
+          // and the horizontal insets are taken away from it.
           SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    'Scan to pay',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Scan a KHQR code to continue',
-                    style: TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
-                ],
-              ),
+            top: false,
+            child: ValueListenableBuilder<MobileScannerState>(
+              valueListenable: _camera,
+              builder: (
+                BuildContext context,
+                MobileScannerState state,
+                Widget? _,
+              ) {
+                final bool failed = state.error != null;
+                return landscape
+                    ? _wide(context, state, failed, sensorSize)
+                    : _tall(context, state, failed, sensorSize);
+              },
             ),
           ),
 
-          // Bottom: the hint, then the two controls, sitting under the scan
-          // frame instead of up in the header.
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    
-                    const SizedBox(height: 18),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        _GlassButton(
-                          icon: _torch
-                              ? Icons.flash_on_rounded
-                              : Icons.flash_off_rounded,
-                          semanticLabel: _torch
-                              ? 'Turn the torch off'
-                              : 'Turn the torch on',
-                          active: _torch,
-                          onTap: done ? null : _toggleTorch,
-                        ),
-                        const SizedBox(width: 16),
-                        _GlassButton(
-                          icon: Icons.cameraswitch_rounded,
-                          semanticLabel: 'Switch camera',
-                          onTap: done ? null : _camera.switchCamera,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Success popup
+          // Success dialog.
           if (done) ...<Widget>[
             Positioned.fill(
               child: FadeTransition(
@@ -363,84 +670,92 @@ class _ScannerPageState extends State<ScannerPage>
   }
 }
 
-// ──────────────────── Small UI pieces ─────────────────────
-class _Shade extends StatelessWidget {
-  const _Shade();
-
-  @override
-  Widget build(BuildContext context) {
-    return const DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          stops: <double>[0, .22, .7, 1],
-          colors: <Color>[
-            Color(0xCC041025),
-            Colors.transparent,
-            Colors.transparent,
-            Color(0xCC041025),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _GlassButton extends StatelessWidget {
-  const _GlassButton({
+// ──────────────────── Pill action button ───────────────────
+/// The pill action button under the preview: charcoal with a white icon and
+/// label at rest, accent while the control is on, spinner while it is busy.
+class _PillButton extends StatelessWidget {
+  const _PillButton({
     required this.icon,
-    required this.semanticLabel,
-    this.onTap,
+    required this.label,
+    required this.onPressed,
     this.active = false,
+    this.busy = false,
+    this.semanticLabel,
   });
 
   final IconData icon;
-  final String semanticLabel;
-  final VoidCallback? onTap;
+  final String label;
+  final VoidCallback? onPressed;
   final bool active;
+  final bool busy;
+  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
-    final bool enabled = onTap != null;
-    final Color accent = active ? _C.gold : _C.aqua;
+    final bool enabled = onPressed != null && !busy;
+    final Color background = enabled && active ? _C.pillActive : _C.pill;
+    final Color foreground = !enabled
+        ? _C.onDisabled
+        : active
+            ? _C.onPillActive
+            : Colors.white;
+    final BorderRadius radius = BorderRadius.circular(_M.pillHeight / 2);
 
     return Semantics(
-      label: semanticLabel,
-      button: enabled,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 240),
-        curve: Curves.easeOut,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          // Soft halo: aqua at rest, gold and brighter while the torch is on.
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: accent.withAlpha(active ? 150 : (enabled ? 55 : 0)),
-              blurRadius: active ? 28 : 16,
-              spreadRadius: active ? 2 : 0,
-            ),
-          ],
-        ),
-        child: Material(
-          color: active ? _C.gold : Colors.white.withAlpha(enabled ? 32 : 16),
-          shape: CircleBorder(
-            side: BorderSide(
-              color: Colors.white.withAlpha(active ? 0 : 46),
-            ),
-          ),
-          child: InkWell(
-            customBorder: const CircleBorder(),
-            onTap: onTap,
-            child: SizedBox(
-              width: 52,
-              height: 52,
-              child: Icon(
-                icon,
-                size: 24,
-                color: active
-                    ? _C.navy
-                    : Colors.white.withAlpha(enabled ? 255 : 120),
+      button: true,
+      enabled: enabled,
+      selected: active,
+      label: semanticLabel ?? label,
+      excludeSemantics: true,
+      child: Material(
+        color: background,
+        borderRadius: radius,
+        child: InkWell(
+          onTap: enabled ? onPressed : null,
+          borderRadius: radius,
+          child: Tooltip(
+            message: semanticLabel ?? label,
+            child: Container(
+              height: _M.pillHeight,
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              decoration: BoxDecoration(
+                borderRadius: radius,
+                border: Border.all(
+                  color: enabled && active
+                      ? Colors.transparent
+                      : _C.pillBorder,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  if (busy)
+                    SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: foreground,
+                      ),
+                    )
+                  else
+                    Icon(icon, size: 20, color: foreground),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: foreground,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -450,14 +765,124 @@ class _GlassButton extends StatelessWidget {
   }
 }
 
+// ─────────────── Payment-methods strip ───────────────
+// Neutral text tiles, not trademarked logos: this package ships no provider
+// artwork, and inventing a logo would be worse than a plain label. The four
+// names are the KHQR issuers this demo already talks about — KHQR is the
+// Cambodian interoperable standard the reference screen reads.
+const List<String> _kProviders = <String>['ABA', 'ACLEDA', 'Wing', 'Bakong'];
 
-
-class _CameraError extends StatelessWidget {
-  const _CameraError({required this.error});
-  final MobileScannerException error;
+/// A centred, evenly spaced strip naming the payment methods this app reads.
+class _ProviderGrid extends StatelessWidget {
+  const _ProviderGrid();
 
   @override
   Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: _M.gutter),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          const Text(
+            'ACCEPTED VIA KHQR',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: _C.caption,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.3,
+            ),
+          ),
+          const SizedBox(height: 10),
+          // A Wrap rather than a GridView: the row reflows to one or two lines
+          // by itself, so nothing clips on a narrow phone or a tablet.
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 10,
+            runSpacing: 10,
+            children: <Widget>[
+              for (final String provider in _kProviders)
+                _ProviderTile(label: provider),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One fixed-size payment-method tile.
+class _ProviderTile extends StatelessWidget {
+  const _ProviderTile({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: label,
+      excludeSemantics: true,
+      child: Container(
+        width: _M.tileWidth,
+        height: _M.tileHeight,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color: _C.providerTile,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: _C.providerTileBorder),
+        ),
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: _C.providerLabel,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.1,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ──────────────────── Camera states ─────────────────────
+/// Shown while the camera is being initialised.
+class _CameraLoading extends StatelessWidget {
+  const _CameraLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return const ColoredBox(
+      color: _C.bg,
+      child: Center(
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            color: Colors.white24,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown when the camera could not be started — most often because camera
+/// permission was refused.
+class _CameraError extends StatelessWidget {
+  const _CameraError({required this.error, this.onRetry});
+
+  final MobileScannerException error;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool denied =
+        error.errorCode == MobileScannerErrorCode.permissionDenied;
     return ColoredBox(
       color: _C.navy,
       child: Center(
@@ -466,12 +891,15 @@ class _CameraError extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              const Icon(Icons.no_photography_rounded,
-                  color: Colors.white54, size: 44),
+              Icon(
+                denied ? Icons.no_photography : Icons.videocam_off_outlined,
+                color: Colors.white54,
+                size: 44,
+              ),
               const SizedBox(height: 14),
-              const Text(
-                'Camera unavailable',
-                style: TextStyle(
+              Text(
+                denied ? 'Camera access needed' : 'Camera unavailable',
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
@@ -482,11 +910,31 @@ class _CameraError extends StatelessWidget {
                 // Only the plugin's own (English) error code is shown. The
                 // native `errorDetails` message is localised by the OS, which
                 // would put a foreign language on this screen.
-                'Allow camera access in Settings, then try again.\n'
-                '${error.errorCode.name}',
+                denied
+                    ? 'Allow camera access to scan a code, or upload one from '
+                        'your gallery instead.'
+                    : 'The camera could not be started. Try again, or upload a '
+                        'code from your gallery instead.\n'
+                        '${error.errorCode.name}',
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.white70, height: 1.4),
               ),
+              if (onRetry != null) ...<Widget>[
+                const SizedBox(height: 20),
+                TextButton.icon(
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh, size: 18),
+                  label: const Text('Try again'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF7CB0FF),
+                    textStyle: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    minimumSize: const Size(120, 48),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -565,9 +1013,12 @@ class _SuccessDialog extends StatelessWidget {
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: <Color>[Color(0xFF2F86F5), _C.blue, Color(0xFF1654B8)],
+                    colors: <Color>[
+                      Color(0xFF2F86F5),
+                      _C.blue,
+                      Color(0xFF1654B8),
+                    ],
                   ),
-                  
                   boxShadow: <BoxShadow>[
                     BoxShadow(
                       color: _C.blue.withAlpha(110),
@@ -642,7 +1093,6 @@ class _SuccessDialog extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           shape: BoxShape.rectangle,
-          
         ),
       ),
     ));
@@ -784,7 +1234,6 @@ class _CardBody extends StatelessWidget {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-          
           child: Column(
             children: <Widget>[
               if (r.isKhqr) ...<Widget>[
@@ -861,7 +1310,9 @@ class _Row extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        border: last ? null : const Border(bottom: BorderSide(color: _C.line, width: 1.5)),
+        border: last
+            ? null
+            : const Border(bottom: BorderSide(color: _C.line, width: 1.5)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

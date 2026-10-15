@@ -18,7 +18,6 @@ class ScanFxSemanticsLabels {
     this.success = 'Code scanned',
     this.error = 'Could not scan code',
     this.invalid = 'Invalid code',
-    this.tapToStart = 'Tap to start scanning',
   });
 
   /// Announced in [ScanFxState.idle].
@@ -45,8 +44,6 @@ class ScanFxSemanticsLabels {
   /// Announced in [ScanFxState.invalid].
   final String invalid;
 
-  /// Hint shown when the scanner is idle.
-  final String tapToStart;
 
   /// The label for [state].
   String labelFor(ScanFxState state) => switch (state) {
@@ -78,7 +75,6 @@ class ScanFxSemanticsLabels {
         success: success ?? this.success,
         error: error ?? this.error,
         invalid: invalid ?? this.invalid,
-        tapToStart: tapToStart ?? this.tapToStart,
       );
 
   @override
@@ -90,8 +86,8 @@ class ScanFxSemanticsLabels {
       other.locked == locked &&
       other.success == success &&
       other.error == error &&
-      other.invalid == invalid &&
-      other.tapToStart == tapToStart;
+      other.invalid == invalid;
+
 
   @override
   int get hashCode => Object.hash(
@@ -102,6 +98,5 @@ class ScanFxSemanticsLabels {
         success,
         error,
         invalid,
-        tapToStart,
       );
 }

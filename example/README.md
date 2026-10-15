@@ -9,6 +9,15 @@ lib/
   banking_camera_demo.dart   # the same flow with a real camera, torch + gallery
   style_studio.dart          # every style, live
   payment/                   # the host-side payment flow (see below)
+  scanner/                   # the scanner screen's reusable widgets
+    camera_preview.dart        #   the rounded preview card + header seat
+    qr_scan_overlay.dart       #   the qr_scan_fx overlay, sized and themed
+    scanner_action_button.dart #   the pill action button
+    scanner_header.dart        #   title, history and close
+    scanner_state_views.dart   #   starting / camera-error views
+    payment_provider_grid.dart #   the payment-methods strip
+    payment_provider.dart      #   which methods, and why (read this one)
+    scanner_style.dart         #   palette, metrics and the overlay theme
 ```
 
 ## Running
@@ -25,10 +34,16 @@ runs on desktop and the web.
 
 ### Look and language
 
-Every screen shares one palette (`lib/theme.dart`) — near-black surfaces with a
+The app screens share one palette (`lib/theme.dart`) — near-black surfaces with a
 single blue accent, so the UI sits comfortably over a camera preview and matches
 the overlay's `banking` look. All strings are English; the example carries no
 second language.
+
+The scanner screen is the one exception, and a deliberate one: it follows its
+reference's neutral dark aesthetic (pure black with charcoal controls, and the
+accent only while the flashlight is on). Those values live in one place,
+`lib/scanner/scanner_style.dart`, and still borrow the accent and text colours
+from `AppTheme`.
 
 ## banking_demo — no camera
 
@@ -49,15 +64,47 @@ The integration a payment app actually ships, on top of `QrScanFx.banking()`:
 
 - the camera is the **host's** (`mobile_scanner`); the overlay receives geometry
   only, never the decoded value;
-- **torch is on by default**, and its icon tracks the plugin's own torch state;
+- **torch is on by default**, and the Flash pill tracks the plugin's own torch
+  state — it fills with the accent while on, and disables itself when the device
+  reports no torch;
 - **gallery** picks an image with `image_picker`, hands it to
   `MobileScannerController.analyzeImage`, and feeds the resulting corners into the
   overlay the same way a live detection would;
 - the **confirmation seat** is where the app states its own outcome — it never
   says "paid", because the overlay cannot know that.
 
+The screen around the overlay is assembled from the reusable widgets in
+`lib/scanner/`, so each piece can be lifted into a real app on its own:
+
+- `ScannerHeader` — centred title, a history shortcut on the left and close in
+  the upper-right, laid over the preview inside the top safe area;
+- `CameraPreview` — the nearly full-width card with rounded bottom corners, plus
+  a short top scrim so the status bar stays legible over a bright frame;
+- `QRScanOverlay` — the `qr_scan_fx` overlay, themed to four white corner
+  brackets (`cornersOnly`) and sized to the reference's 280–330 dp band, with the
+  status notice pinned below the frame;
+- `ScannerActionButton` — the pill control in its resting, active, busy and
+  disabled states;
+- `ScannerErrorState` / `ScannerLoadingState` — the camera-failed and
+  camera-starting views. The overlay is not drawn over either, so the message is
+  never dimmed;
+- `PaymentProviderGrid` — the compact payment-methods strip. It renders neutral
+  text tiles because no authorised logo assets ship with this repository; see
+  `payment_provider.dart` for exactly why the list is what it is, and set
+  `logoAsset` on an entry once you have artwork.
+
+The screen also handles the states a real scanner needs: a duplicate-detection
+guard so one code cannot open two payment screens, a busy guard on the gallery
+pick, haptic feedback on a successful read, a landscape layout that moves the
+controls beside the preview instead of crushing it, and reduced-motion support
+from the overlay itself.
+
 On iOS, add `NSCameraUsageDescription` and `NSPhotoLibraryUsageDescription` to
 `Info.plist`. Android merges the camera permission in from the plugin.
+
+There is no in-app "simulate a rejection" button here — the invalid path is
+reached honestly by uploading an image with no QR code in it. The camera-free
+demo below still has an explicit **Reject** control.
 
 ## The payment flow — `lib/payment/`
 
@@ -97,6 +144,10 @@ banking_demo ────────┘                                        
   **Continue to payment**. Enter an amount and confirm.
 - **Camera:** point at a KHQR code. The flow opens on its own once the code is
   accepted. A non-KHQR code still opens the flow, as an unverified merchant.
+- **Camera controls:** **Flash** toggles the torch (it is on when the screen
+  opens), **Upload QR** decodes an image from the gallery, and the close button
+  in the upper-right returns to the previous screen — or, when you launched this
+  demo directly with `-t`, tells you there is nothing behind it.
 - **Recent scans:** tap the **Recent** button in either banking demo, the history
   icon in the camera demo, or the **Recent scans** tile in the chooser. Confirm a
   payment and it appears there, newest first.

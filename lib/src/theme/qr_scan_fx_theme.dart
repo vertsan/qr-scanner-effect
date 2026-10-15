@@ -152,7 +152,7 @@ class QrScanFxTheme extends ThemeExtension<QrScanFxTheme> {
       success: 'Code scanned',
       error: 'Could not scan code',
       invalid: 'Unsupported or invalid QR code',
-      tapToStart: 'Point the camera at the code',
+    
     ),
   );
 

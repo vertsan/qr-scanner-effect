@@ -86,11 +86,7 @@ class ScanHintView extends StatelessWidget {
                     horizontal: 16,
                     vertical: 9,
                   ),
-                  child: Text(
-                    theme.labels.tapToStart,
-                    style: theme.resolvedHintStyle,
-                    textAlign: TextAlign.center,
-                  ),
+                 
                 ),
               ),
             ),

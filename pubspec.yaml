@@ -24,6 +24,10 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   flutter_test:
     sdk: flutter
+  # Used by `lib/main.dart`, the package's own demo. Both are dev dependencies
+  # on purpose, so the published package still ships with no runtime
+  # dependencies of its own.
+  image_picker: ^1.2.4
   mobile_scanner: ^7.4.2
 
 flutter:
