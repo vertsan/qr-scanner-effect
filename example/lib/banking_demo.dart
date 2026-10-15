@@ -20,6 +20,11 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:qr_scan_fx/qr_scan_fx.dart';
 
+import 'payment/khqr.dart';
+import 'payment/payment_confirmation_page.dart';
+import 'payment/payment_models.dart';
+import 'payment/recent_scans_page.dart';
+
 void main() => runApp(const BankingDemoApp());
 
 /// Where the simulated code "is" on screen, as a fraction of the viewport.
@@ -120,6 +125,36 @@ class _BankingDemoPageState extends State<BankingDemoPage> {
     _controller.start();
   }
 
+  /// Opens the host's payment flow after a successful "scan".
+  ///
+  /// The scan is simulated, so the request is a stand-in for what the app would
+  /// normally parse from the camera. The payload never reaches the package.
+  Future<void> _openPayment() async {
+    const PaymentRequest request = PaymentRequest(
+      payee: 'Phnom Penh Coffee',
+      currency: PaymentCurrency.usd,
+      city: 'Phnom Penh',
+      verified: true,
+    );
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) =>
+            PaymentConfirmationPage(request: request),
+      ),
+    );
+    if (mounted) _restart();
+  }
+
+  /// Opens the saved receipts, newest first.
+  Future<void> _openHistory() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) => const RecentScansPage(),
+      ),
+    );
+    if (mounted) _restart();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -134,11 +169,13 @@ class _BankingDemoPageState extends State<BankingDemoPage> {
             child: const _MockCamera(),
             confirmationBuilder: (BuildContext context) => _ConfirmationSeat(
               state: _state,
+              onContinue: _openPayment,
             ),
             controlsBuilder: (BuildContext context) => _ControlsSeat(
               onScan: () => _simulateScan(size),
               onReject: _simulateRejection,
               onReset: _restart,
+              onHistory: _openHistory,
               tunables: _tunables,
               onTunables: (ScanFxTunables value) =>
                   setState(() => _tunables = value),
@@ -155,14 +192,16 @@ class _BankingDemoPageState extends State<BankingDemoPage> {
 /// Note the copy. It says the code was captured — never that a payment went
 /// through, because the overlay has no way to know that and must not imply it.
 class _ConfirmationSeat extends StatelessWidget {
-  const _ConfirmationSeat({required this.state});
+  const _ConfirmationSeat({required this.state, required this.onContinue});
 
   final ScanFxState state;
+  final VoidCallback onContinue;
 
   @override
   Widget build(BuildContext context) {
     final bool visible = state == ScanFxState.success;
     return IgnorePointer(
+      ignoring: !visible,
       child: Align(
         alignment: const Alignment(0, 0.16),
         child: AnimatedOpacity(
@@ -176,10 +215,10 @@ class _ConfirmationSeat extends StatelessWidget {
               borderRadius: BorderRadius.circular(18),
               border: Border.all(color: const Color(0xFF1E3A5F)),
             ),
-            child: const Column(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Text(
+                const Text(
                   'Code captured',
                   style: TextStyle(
                     color: Color(0xFFF2F6FC),
@@ -187,8 +226,8 @@ class _ConfirmationSeat extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                SizedBox(height: 6),
-                Text(
+                const SizedBox(height: 6),
+                const Text(
                   'Your app decides what happens next. qr_scan_fx never sees the '
                   'payload.',
                   textAlign: TextAlign.center,
@@ -197,6 +236,11 @@ class _ConfirmationSeat extends StatelessWidget {
                     fontSize: 12.5,
                     height: 1.35,
                   ),
+                ),
+                const SizedBox(height: 14),
+                FilledButton(
+                  onPressed: onContinue,
+                  child: const Text('Continue to payment'),
                 ),
               ],
             ),
@@ -217,6 +261,7 @@ class _ControlsSeat extends StatelessWidget {
     required this.onScan,
     required this.onReject,
     required this.onReset,
+    required this.onHistory,
     required this.tunables,
     required this.onTunables,
   });
@@ -224,6 +269,7 @@ class _ControlsSeat extends StatelessWidget {
   final VoidCallback onScan;
   final VoidCallback onReject;
   final VoidCallback onReset;
+  final VoidCallback onHistory;
   final ScanFxTunables tunables;
   final ValueChanged<ScanFxTunables> onTunables;
 
@@ -253,6 +299,7 @@ class _ControlsSeat extends StatelessWidget {
                     onPressed: onReject,
                     child: const Text('Reject'),
                   ),
+                  TextButton(onPressed: onHistory, child: const Text('Recent')),
                   TextButton(onPressed: onReset, child: const Text('Reset')),
                 ],
               ),

@@ -3,11 +3,14 @@
 // * Banking (no camera) — drives the overlay with scripted detections. Runs on
 //   any device, desktop or the web, with no camera permission.
 // * Banking (camera)    — the real integration: camera, torch and gallery.
+// * Style Studio        — every frame, corner, beam, lock-on and effect, live.
 
 import 'package:flutter/material.dart';
 
 import 'banking_camera_demo.dart';
 import 'banking_demo.dart';
+import 'payment/recent_scans_page.dart';
+import 'style_studio.dart';
 
 void main() => runApp(const ExampleApp());
 
@@ -46,6 +49,18 @@ class _Chooser extends StatelessWidget {
             subtitle: 'Real camera · torch and gallery',
             icon: Icons.photo_camera_outlined,
             builder: (BuildContext context) => const BankingCameraPage(),
+          ),
+          _DemoTile(
+            title: 'Style Studio',
+            subtitle: 'Every frame, corner, beam and effect · live',
+            icon: Icons.auto_awesome_outlined,
+            builder: (BuildContext context) => const StyleStudioPage(),
+          ),
+          _DemoTile(
+            title: 'Recent scans',
+            subtitle: 'Receipts saved on this device',
+            icon: Icons.history,
+            builder: (BuildContext context) => const RecentScansPage(),
           ),
         ],
       ),

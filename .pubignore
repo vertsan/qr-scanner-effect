@@ -1,0 +1,31 @@
+# Files excluded from the published tarball but kept in the repository.
+#
+# `dart pub publish` ships everything git tracks, so anything that exists only
+# to develop or demo the package has to be named here explicitly.
+
+# The dev-only camera host. It imports `mobile_scanner`, which is a dev
+# dependency, and pub refuses to publish a `lib/` that imports one — a rule that
+# is exactly right here: the package itself must never require a camera.
+lib/main.dart
+
+# The app scaffold sitting next to the package. The package is a library, not an
+# app; these directories exist so the demo host at `lib/main.dart` can run.
+android/
+ios/
+linux/
+macos/
+web/
+windows/
+
+# Build output and tooling caches. Also gitignored; named here because pub ships
+# tracked files regardless of `.gitignore`.
+build/
+.dart_tool/
+.flutter-plugins-dependencies
+*.iml
+
+# Repo-only tooling and editor state.
+.github/
+.idea/
+.qodo/
+.metadata

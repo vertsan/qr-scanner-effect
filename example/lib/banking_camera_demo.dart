@@ -25,6 +25,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_scan_fx/qr_scan_fx.dart';
 
+import 'payment/khqr.dart';
+import 'payment/payment_confirmation_page.dart';
+import 'payment/payment_models.dart';
+import 'payment/recent_scans_page.dart';
+
 void main() => runApp(const BankingCameraDemoApp());
 
 class BankingCameraDemoApp extends StatelessWidget {
@@ -93,8 +98,13 @@ class _BankingCameraPageState extends State<BankingCameraPage> {
   /// Hands the overlay a location and reports the read.
   ///
   /// The corner list is the *entire* input the package gets. The decoded value
-  /// is read by this app, in [_onDetect], and never crosses this boundary.
-  void _acquire(Size sensorSize, List<Offset> corners) {
+  /// is read by this app, in [_onDetect], and passed to [_openPayment] — it
+  /// never crosses the overlay boundary.
+  Future<void> _acquire(
+    Size sensorSize,
+    List<Offset> corners,
+    String? payload,
+  ) async {
     if (!sensorSize.isEmpty && sensorSize != _sensorSize) {
       setState(() => _sensorSize = sensorSize);
     }
@@ -104,16 +114,57 @@ class _BankingCameraPageState extends State<BankingCameraPage> {
     // A real app validates here — off the UI thread — before deciding. This
     // demo accepts the code so the calm success path is what you see; the
     // "Reject" control in the overlay seat shows the other outcome.
-    Timer(const Duration(milliseconds: 760), () {
-      if (mounted) _fx.success();
-    });
+    await Future<void>.delayed(const Duration(milliseconds: 760));
+    if (!mounted) return;
+    _fx.success();
+
+    // Let the success state land, then hand off to the host's payment flow.
+    await Future<void>.delayed(const Duration(milliseconds: 620));
+    if (!mounted) return;
+    await _openPayment(payload);
+  }
+
+  /// The host's own next step: turn the decoded payload into a payment.
+  ///
+  /// This is where the `qr_scan_fx` job ends. The package drew the lock-on and
+  /// the success; from here the app parses the code and owns every decision.
+  Future<void> _openPayment(String? payload) async {
+    final KhqrData? data = payload == null ? null : KhqrParser.parse(payload);
+    final PaymentRequest request = data == null
+        ? const PaymentRequest(
+            payee: 'Unverified merchant',
+            currency: PaymentCurrency.usd,
+          )
+        : PaymentRequest.fromKhqr(data);
+
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) =>
+            PaymentConfirmationPage(request: request),
+      ),
+    );
+    if (mounted) _restart();
+  }
+
+  /// Opens the saved receipts, newest first.
+  Future<void> _openHistory() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) => const RecentScansPage(),
+      ),
+    );
   }
 
   void _onDetect(BarcodeCapture capture) {
     if (_settled || capture.barcodes.isEmpty) return;
-    final List<Offset> corners = capture.barcodes.first.corners;
+    final Barcode code = capture.barcodes.first;
+    final List<Offset> corners = code.corners;
     if (corners.length != 4) return; // Nothing to frame without corners.
-    _acquire(capture.size, corners);
+    // The decoded string is read here, by the app, and kept on this side of the
+    // boundary: the overlay receives geometry alone.
+    unawaited(
+      _acquire(capture.size, corners, code.displayValue ?? code.rawValue),
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -128,14 +179,18 @@ class _BankingCameraPageState extends State<BankingCameraPage> {
     if (!mounted) return;
 
     final List<Barcode> codes = capture?.barcodes ?? const <Barcode>[];
-    final List<Offset> corners =
-        codes.isEmpty ? const <Offset>[] : codes.first.corners;
+    final Barcode? code = codes.isEmpty ? null : codes.first;
+    final List<Offset> corners = code?.corners ?? const <Offset>[];
 
     if (corners.length != 4) {
       _fx.invalid('No QR code found in that image');
       return;
     }
-    _acquire(capture?.size ?? Size.zero, corners);
+    await _acquire(
+      capture?.size ?? Size.zero,
+      corners,
+      code?.displayValue ?? code?.rawValue,
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -222,6 +277,12 @@ class _BankingCameraPageState extends State<BankingCameraPage> {
                     tooltip: 'Simulate a rejected code',
                     icon: const Icon(Icons.block_outlined),
                   ),
+                  const SizedBox(width: 10),
+                  IconButton.filledTonal(
+                    onPressed: _openHistory,
+                    tooltip: 'Recent scans',
+                    icon: const Icon(Icons.history),
+                  ),
                 ],
               ),
             ),
@@ -263,7 +324,7 @@ class _ConfirmationCard extends StatelessWidget {
             ),
             SizedBox(height: 6),
             Text(
-              'Validate it, then tell the user the outcome in your own words.',
+              'Validated by the app — opening the payment flow…',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Color(0xFF9FB3CC),
