@@ -1,3 +1,4 @@
+import '../../animation/scan_fx_frame.dart';
 import 'scan_corner_layer.dart';
 
 /// Rounded bracket arms.
@@ -7,4 +8,7 @@ import 'scan_corner_layer.dart';
 class RoundedCorners extends ScanCornerLayer {
   /// Creates the style.
   RoundedCorners();
+
+  @override
+  double bendRadiusFor(ScanFxFrame frame) => frame.cornerRadius;
 }

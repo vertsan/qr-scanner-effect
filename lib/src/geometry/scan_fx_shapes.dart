@@ -236,17 +236,28 @@ class ScanFxShapes {
     Path path,
     ScanFxQuad quad,
     double inset,
-    double length,
+    double length, {
+    double bendRadius = 0,
+  }
   ) {
+    final bend = math.min(math.max(bendRadius, 0.0), length * 0.4);
     for (var i = 0; i < 4; i++) {
       final origin = insetQuadCorner(quad, i, inset);
-      addCornerArms(
-        path,
-        origin,
-        unitVector(origin, quadCorner(quad, (i + 3) % 4)),
-        unitVector(origin, quadCorner(quad, (i + 1) % 4)),
-        length,
-      );
+      final incoming = unitVector(origin, quadCorner(quad, (i + 3) % 4));
+      final outgoing = unitVector(origin, quadCorner(quad, (i + 1) % 4));
+      final incomingEnd = origin + incoming * length;
+      final outgoingEnd = origin + outgoing * length;
+
+      path
+        ..moveTo(incomingEnd.dx, incomingEnd.dy)
+        ..lineTo((origin + incoming * bend).dx, (origin + incoming * bend).dy);
+      if (bend > 0) {
+        final curveEnd = origin + outgoing * bend;
+        path.quadraticBezierTo(origin.dx, origin.dy, curveEnd.dx, curveEnd.dy);
+      } else {
+        path.lineTo(origin.dx, origin.dy);
+      }
+      path.lineTo(outgoingEnd.dx, outgoingEnd.dy);
     }
   }
 

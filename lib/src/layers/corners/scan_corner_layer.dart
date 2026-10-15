@@ -36,6 +36,7 @@ abstract class ScanCornerLayer extends ScanLayer {
   ScanFxQuad? _pathQuad;
   double _pathArm = -1;
   double _pathInset = -1;
+  double _pathBendRadius = -1;
 
   /// The cap applied to the bracket arms.
   StrokeCap get cap => StrokeCap.round;
@@ -57,6 +58,10 @@ abstract class ScanCornerLayer extends ScanLayer {
   /// The bracket arm length in logical pixels.
   double armFor(ScanFxFrame frame) =>
       frame.quad.shortestSide * frame.theme.cornerArmFraction;
+
+  /// Radius used to soften the bracket's inside bend.
+  @protected
+  double bendRadiusFor(ScanFxFrame frame) => 0;
 
   /// Corner [index] of [quad] (`0` is the top-left of the ring).
   @protected
@@ -85,18 +90,27 @@ abstract class ScanCornerLayer extends ScanLayer {
     final quad = frame.quad;
     final arm = armFor(frame);
     final inset = insetFor(frame);
+    final bendRadius = bendRadiusFor(frame);
     if (_path != null &&
         _pathQuad == quad &&
         _pathArm == arm &&
-        _pathInset == inset) {
+        _pathInset == inset &&
+        _pathBendRadius == bendRadius) {
       return _path!;
     }
     final path = _path ??= Path();
     path.reset();
-    ScanFxShapes.addQuadCornerArms(path, quad, inset, arm);
+    ScanFxShapes.addQuadCornerArms(
+      path,
+      quad,
+      inset,
+      arm,
+      bendRadius: bendRadius,
+    );
     _pathQuad = quad;
     _pathArm = arm;
     _pathInset = inset;
+    _pathBendRadius = bendRadius;
     return path;
   }
 

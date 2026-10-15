@@ -204,7 +204,7 @@ class _ScannerPageState extends State<ScannerPage>
     backdropColor: _C.bg,
     backdropStyle: ScanBackdropStyle.solidDim,
     cornerStyle: ScanCornerStyle.rounded,
-    cornerRadius: 24,
+    cornerRadius: 38,
     cornerStrokeWidth: 4.5,
     cornerArmFraction: 0.2,
     frameShape: ScanFrameShape.cornersOnly,
