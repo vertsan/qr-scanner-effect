@@ -366,7 +366,7 @@ void main() {
       final Map<String, ScanIdleStyle> seen = <String, ScanIdleStyle>{};
       for (final MapEntry<ScanIdleStyle, ScanFxIdleTransform> e
           in transforms.entries) {
-        final String key = '${e.value.scale}|${e.value.offset}';
+        final String key = '${e.value.scale}|${e.value.offset}|${e.value.shimmer}';
         expect(
           seen.containsKey(key),
           isFalse,

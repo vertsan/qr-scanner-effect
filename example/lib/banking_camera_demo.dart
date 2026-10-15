@@ -29,6 +29,7 @@ import 'payment/khqr.dart';
 import 'payment/payment_confirmation_page.dart';
 import 'payment/payment_models.dart';
 import 'payment/recent_scans_page.dart';
+import 'theme.dart';
 
 void main() => runApp(const BankingCameraDemoApp());
 
@@ -41,7 +42,7 @@ class BankingCameraDemoApp extends StatelessWidget {
     return MaterialApp(
       title: 'qr_scan_fx · banking camera demo',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(brightness: Brightness.dark, useMaterial3: true),
+      theme: AppTheme.data(),
       home: const BankingCameraPage(),
     );
   }
@@ -219,7 +220,7 @@ class _BankingCameraPageState extends State<BankingCameraPage> {
             : _sensorSize);
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.bg,
       body: QrScanFx.banking(
         controller: _fx,
         sensorSize: sensorSize,

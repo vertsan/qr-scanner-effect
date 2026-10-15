@@ -23,6 +23,13 @@ target first — for example `flutter create --platforms=android .` from this
 directory — then run again. The camera-free demo needs no permission and also
 runs on desktop and the web.
 
+### Look and language
+
+Every screen shares one palette (`lib/theme.dart`) — near-black surfaces with a
+single blue accent, so the UI sits comfortably over a camera preview and matches
+the overlay's `banking` look. All strings are English; the example carries no
+second language.
+
 ## banking_demo — no camera
 
 Drives a real `QrScanFxController` with scripted detections, so it needs no

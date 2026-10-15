@@ -13,6 +13,7 @@ import 'khqr.dart';
 import 'payment_models.dart';
 import 'receipt_page.dart';
 import 'receipt_store.dart';
+import '../theme.dart';
 
 /// Collects the amount and account for a scanned payment, then gates it.
 class PaymentConfirmationPage extends StatefulWidget {
@@ -123,92 +124,168 @@ class _PaymentConfirmationPageState extends State<PaymentConfirmationPage> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final double? amount = _parsedAmount;
-    final PaymentCurrency other = _currency == PaymentCurrency.usd
-        ? PaymentCurrency.khr
-        : PaymentCurrency.usd;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Confirm payment')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          children: <Widget>[
-            _PayeeCard(request: widget.request),
-            const SizedBox(height: 24),
-            const _SectionLabel('Amount'),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _amount,
-              autofocus: !widget.request.hasAmount,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: <TextInputFormatter>[
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-              ],
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
-              decoration: InputDecoration(
-                prefixText: '${_currency.symbol} ',
-                hintText: _currency.hasDecimals ? '0.00' : '0',
-                border: const OutlineInputBorder(),
-                helperText: widget.request.hasAmount
-                    ? 'Amount from the QR code — edit if needed'
-                    : 'This code has no amount; enter it here',
-              ),
-              onChanged: (_) => setState(() {}),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+        children: <Widget>[
+          _PayeeCard(request: widget.request),
+          const SizedBox(height: 24),
+          Text(
+            'Amount',
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: AppTheme.onSurfaceVariant,
+              letterSpacing: 0.6,
             ),
-            const SizedBox(height: 10),
-            Text(
-              amount == null
-                  ? 'Enter an amount to see the conversion'
-                  : '≈ ${formatMoney(convertCurrency(amount, _currency, other), other)}',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _amount,
+            autofocus: !widget.request.hasAmount,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: <TextInputFormatter>[
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+            ],
+            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w600),
+            decoration: InputDecoration(
+              prefixText: '${_currency.symbol} ',
+              hintText: _currency.hasDecimals ? '0.00' : '0',
+              helperText: widget.request.hasAmount
+                  ? 'Amount from the QR code — edit if needed'
+                  : 'This code has no amount; enter it here',
             ),
-            const SizedBox(height: 16),
-            SegmentedButton<PaymentCurrency>(
-              segments: const <ButtonSegment<PaymentCurrency>>[
-                ButtonSegment<PaymentCurrency>(
-                  value: PaymentCurrency.usd,
-                  label: Text('USD'),
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 16),
+          SegmentedButton<PaymentCurrency>(
+            style: SegmentedButton.styleFrom(
+              selectedBackgroundColor: AppTheme.accentContainer,
+              selectedForegroundColor: AppTheme.onAccentContainer,
+              foregroundColor: AppTheme.onSurfaceVariant,
+            ),
+            segments: const <ButtonSegment<PaymentCurrency>>[
+              ButtonSegment<PaymentCurrency>(
+                value: PaymentCurrency.usd,
+                label: Text('USD'),
+              ),
+              ButtonSegment<PaymentCurrency>(
+                value: PaymentCurrency.khr,
+                label: Text('KHR'),
+              ),
+            ],
+            selected: <PaymentCurrency>{_currency},
+            onSelectionChanged: (Set<PaymentCurrency> selection) =>
+                _selectCurrency(selection.first),
+          ),
+          const SizedBox(height: 28),
+          Text(
+            'Pay from',
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: AppTheme.onSurfaceVariant,
+              letterSpacing: 0.6,
+            ),
+          ),
+          const SizedBox(height: 6),
+          for (final BankAccount account in kDemoAccounts)
+            _AccountTile(
+              account: account,
+              selected: account.id == _account.id,
+              onTap: () => setState(() => _account = account),
+            ),
+        ],
+      ),
+      bottomNavigationBar: _ConfirmBar(
+        amount: amount,
+        currency: _currency,
+        busy: _busy,
+        onConfirm: _confirm,
+      ),
+    );
+  }
+}
+
+/// A persistent bar: the conversion, then the one action that matters.
+class _ConfirmBar extends StatelessWidget {
+  const _ConfirmBar({
+    required this.amount,
+    required this.currency,
+    required this.busy,
+    required this.onConfirm,
+  });
+
+  final double? amount;
+  final PaymentCurrency currency;
+  final bool busy;
+  final VoidCallback onConfirm;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final PaymentCurrency other =
+        currency == PaymentCurrency.usd ? PaymentCurrency.khr : PaymentCurrency.usd;
+
+    return SafeArea(
+      minimum: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppTheme.surface,
+              border: Border.all(color: AppTheme.outline.withValues(alpha: 0.7)),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: <Widget>[
+                Text(
+                  'You pay',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.onSurfaceVariant,
+                  ),
                 ),
-                ButtonSegment<PaymentCurrency>(
-                  value: PaymentCurrency.khr,
-                  label: Text('KHR'),
-                ),
-              ],
-              selected: <PaymentCurrency>{_currency},
-              onSelectionChanged: (Set<PaymentCurrency> selection) =>
-                  _selectCurrency(selection.first),
-            ),
-            const SizedBox(height: 28),
-            const _SectionLabel('Pay from'),
-            const SizedBox(height: 4),
-            for (final BankAccount account in kDemoAccounts)
-              _AccountTile(
-                account: account,
-                selected: account.id == _account.id,
-                onTap: () => setState(() => _account = account),
-              ),
-            const SizedBox(height: 32),
-            FilledButton(
-              onPressed: _busy ? null : _confirm,
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(52),
-              ),
-              child: _busy
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(
+                const Spacer(),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: <Widget>[
+                    Text(
                       amount == null
-                          ? 'Confirm'
-                          : 'Confirm ${formatMoney(amount, _currency)}',
+                          ? '—'
+                          : formatMoney(amount!, currency),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
+                    Text(
+                      amount == null
+                          ? 'Enter an amount above'
+                          : '≈ ${formatMoney(convertCurrency(amount!, currency, other), other)}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppTheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 12),
+          FilledButton(
+            onPressed: busy ? null : onConfirm,
+            child: busy
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(
+                    amount == null
+                        ? 'Confirm'
+                        : 'Confirm ${formatMoney(amount!, currency)}',
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -222,45 +299,54 @@ class _PayeeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: <Widget>[
-            CircleAvatar(
-              radius: 24,
-              child: Text(
-                request.payee.isEmpty
-                    ? '?'
-                    : request.payee.characters.first.toUpperCase(),
-                style: theme.textTheme.titleMedium,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        border: Border.all(color: AppTheme.outline.withValues(alpha: 0.7)),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: <Widget>[
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: AppTheme.accentContainer,
+            foregroundColor: AppTheme.onAccentContainer,
+            child: Text(
+              request.payee.isEmpty
+                  ? '?'
+                  : request.payee.characters.first.toUpperCase(),
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: AppTheme.onAccentContainer,
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  request.payee,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (request.city != null) ...<Widget>[
+                  const SizedBox(height: 2),
                   Text(
-                    request.payee,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+                    request.city!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppTheme.onSurfaceVariant,
                     ),
                   ),
-                  if (request.city != null)
-                    Text(
-                      request.city!,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  const SizedBox(height: 4),
-                  _VerifiedBadge(verified: request.verified),
                 ],
-              ),
+                const SizedBox(height: 8),
+                _VerifiedBadge(verified: request.verified),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -274,8 +360,7 @@ class _VerifiedBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final Color color =
-        verified ? theme.colorScheme.primary : theme.colorScheme.error;
+    final Color color = verified ? AppTheme.accent : AppTheme.negative;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
@@ -308,37 +393,58 @@ class _AccountTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      color: selected ? theme.colorScheme.primaryContainer : null,
-      child: ListTile(
-        onTap: onTap,
-        leading: Icon(
-          selected ? Icons.check_circle : Icons.circle_outlined,
-          color: selected ? theme.colorScheme.primary : null,
-        ),
-        title: Text(account.label),
-        subtitle: account.maskedNumber == null
-            ? null
-            : Text('${account.currency.code} • ${account.maskedNumber}'),
-      ),
-    );
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text.toUpperCase(),
-      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            letterSpacing: 1,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Material(
+        color: selected ? AppTheme.accentContainer : AppTheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: selected
+                    ? AppTheme.accent
+                    : AppTheme.outline.withValues(alpha: 0.7),
+              ),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: <Widget>[
+                Icon(
+                  selected ? Icons.check_circle : Icons.account_balance_outlined,
+                  color: selected ? AppTheme.accent : AppTheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        account.label,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (account.maskedNumber != null) ...<Widget>[
+                        const SizedBox(height: 2),
+                        Text(
+                          '${account.currency.code} • ${account.maskedNumber}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppTheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
+        ),
+      ),
     );
   }
 }

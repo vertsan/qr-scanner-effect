@@ -24,6 +24,7 @@ import 'payment/khqr.dart';
 import 'payment/payment_confirmation_page.dart';
 import 'payment/payment_models.dart';
 import 'payment/recent_scans_page.dart';
+import 'theme.dart';
 
 void main() => runApp(const BankingDemoApp());
 
@@ -42,7 +43,7 @@ class BankingDemoApp extends StatelessWidget {
     return MaterialApp(
       title: 'qr_scan_fx · banking demo',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(brightness: Brightness.dark, useMaterial3: true),
+      theme: AppTheme.data(),
       home: const BankingDemoPage(),
     );
   }
@@ -158,7 +159,7 @@ class _BankingDemoPageState extends State<BankingDemoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF04070D),
+      backgroundColor: AppTheme.bg,
       body: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
           final Size size = constraints.biggest;

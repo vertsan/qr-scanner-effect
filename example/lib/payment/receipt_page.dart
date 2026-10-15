@@ -3,12 +3,15 @@
 // The package drew the overlay; the host's gate authorised the payment; this
 // screen is the host's own record of it. Nothing here comes from `qr_scan_fx`.
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'khqr.dart';
 import 'payment_models.dart';
 import 'receipt_saver.dart';
+import '../theme.dart';
 
 /// A shareable, saveable receipt for one confirmed payment.
 class ReceiptPage extends StatelessWidget {
@@ -67,97 +70,128 @@ class ReceiptPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final bool reduceMotion = MediaQuery.disableAnimationsOf(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Receipt'),
         automaticallyImplyLeading: false,
       ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          children: <Widget>[
-            Center(
-              child: Icon(
-                Icons.check_circle,
-                size: 64,
-                color: theme.colorScheme.primary,
-              ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        children: <Widget>[
+          _SuccessHero(reduceMotion: reduceMotion),
+          const SizedBox(height: 12),
+          Text(
+            'Payment successful',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
             ),
-            const SizedBox(height: 12),
-            Center(
-              child: Text(
-                'Payment successful',
-                style: theme.textTheme.titleLarge,
-              ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            formatMoney(receipt.amount, receipt.currency),
+            textAlign: TextAlign.center,
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w700,
             ),
-            const SizedBox(height: 4),
-            Center(
-              child: Text(
-                formatMoney(receipt.amount, receipt.currency),
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+          ),
+          Text(
+            '≈ ${formatMoney(receipt.otherAmount, receipt.otherCurrency)}',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppTheme.onSurfaceVariant,
             ),
-            Center(
-              child: Text(
-                '≈ ${formatMoney(receipt.otherAmount, receipt.otherCurrency)}',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
+          ),
+          const SizedBox(height: 28),
+          Container(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
+            decoration: BoxDecoration(
+              color: AppTheme.surface,
+              border: Border.all(color: AppTheme.outline.withValues(alpha: 0.7)),
+              borderRadius: BorderRadius.circular(18),
             ),
-            const SizedBox(height: 28),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Column(
-                  children: <Widget>[
-                    _ReceiptRow(label: 'Payee', value: receipt.payee),
-                    _ReceiptRow(label: 'Paid from', value: _accountLabel),
-                    _ReceiptRow(label: 'Transaction', value: receipt.id),
-                    _ReceiptRow(
-                      label: 'Date',
-                      value: formatTimestamp(receipt.createdAt),
-                    ),
-                    _ReceiptRow(
-                      label: 'Status',
-                      value: 'Confirmed',
-                      valueColor: theme.colorScheme.primary,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 28),
-            Row(
+            child: Column(
               children: <Widget>[
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _share,
-                    icon: const Icon(Icons.ios_share),
-                    label: const Text('Share'),
-                  ),
+                _ReceiptRow(label: 'Payee', value: receipt.payee),
+                _ReceiptRow(label: 'Paid from', value: _accountLabel),
+                _ReceiptRow(
+                  label: 'Transaction',
+                  value: receipt.id,
+                  tabular: true,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _save(context),
-                    icon: const Icon(Icons.save_alt),
-                    label: const Text('Save'),
-                  ),
+                _ReceiptRow(
+                  label: 'Date',
+                  value: formatTimestamp(receipt.createdAt),
+                  tabular: true,
+                ),
+                const _DashedDivider(),
+                _ReceiptRow(
+                  label: 'Status',
+                  value: 'Confirmed',
+                  valueColor: AppTheme.positive,
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Done'),
+          ),
+          const SizedBox(height: 28),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _share,
+                  icon: const Icon(Icons.ios_share, size: 18),
+                  label: const Text('Share'),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _save(context),
+                  icon: const Icon(Icons.save_alt, size: 18),
+                  label: const Text('Save'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Done'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A gentle check that scales in — skipped entirely when the system asks for
+/// reduced motion.
+class _SuccessHero extends StatelessWidget {
+  const _SuccessHero({required this.reduceMotion});
+
+  final bool reduceMotion;
+
+  @override
+  Widget build(BuildContext context) {
+    const Widget icon = Icon(Icons.check, size: 40, color: AppTheme.onAccent);
+
+    return Center(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: reduceMotion ? 1 : 0.55, end: 1),
+        duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 460),
+        curve: Curves.easeOutBack,
+        builder: (BuildContext context, double scale, Widget? child) =>
+            Transform.scale(scale: scale, child: child),
+        child: Container(
+          width: 76,
+          height: 76,
+          decoration: BoxDecoration(
+            color: AppTheme.accent,
+            shape: BoxShape.circle,
+          ),
+          child: icon,
         ),
       ),
     );
@@ -169,17 +203,19 @@ class _ReceiptRow extends StatelessWidget {
     required this.label,
     required this.value,
     this.valueColor,
+    this.tabular = false,
   });
 
   final String label;
   final String value;
   final Color? valueColor;
+  final bool tabular;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 13),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -188,7 +224,7 @@ class _ReceiptRow extends StatelessWidget {
             child: Text(
               label,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+                color: AppTheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -199,6 +235,9 @@ class _ReceiptRow extends StatelessWidget {
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: valueColor,
                 fontWeight: FontWeight.w600,
+                fontFeatures: tabular
+                    ? const <FontFeature>[FontFeature.tabularFigures()]
+                    : null,
               ),
             ),
           ),
@@ -206,4 +245,46 @@ class _ReceiptRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A dotted rule, so the card reads like a printed ticket.
+class _DashedDivider extends StatelessWidget {
+  const _DashedDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 1,
+      width: double.infinity,
+      child: CustomPaint(
+        painter: _DashPainter(
+          AppTheme.outline.withValues(alpha: 0.9),
+        ),
+      ),
+    );
+  }
+}
+
+class _DashPainter extends CustomPainter {
+  const _DashPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint paint = Paint()
+      ..color = color
+      ..strokeWidth = 1;
+    const double dashWidth = 6;
+    const double gap = 5;
+    double x = 0;
+    while (x < size.width) {
+      final double end = math.min(x + dashWidth, size.width);
+      canvas.drawLine(Offset(x, 0), Offset(end, 0), paint);
+      x += dashWidth + gap;
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashPainter oldDelegate) => oldDelegate.color != color;
 }
