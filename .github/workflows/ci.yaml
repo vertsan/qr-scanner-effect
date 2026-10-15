@@ -38,6 +38,10 @@ jobs:
           flutter pub get
           flutter analyze
 
+      - name: Test the example
+        working-directory: example
+        run: flutter test
+
       - name: Test
         run: flutter test --coverage
 
@@ -76,4 +80,4 @@ jobs:
         continue-on-error: true
         run: |
           dart pub global activate pana
-          dart pub global run pana --no-warning .
+          dart pub global run pana .
