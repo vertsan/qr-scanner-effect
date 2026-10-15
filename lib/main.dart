@@ -140,6 +140,7 @@ class _ScannerPageState extends State<ScannerPage>
     cornerColor: Colors.white,
     beamColor: _C.aqua,
     frameGlowColor: const Color(0x3338E1D0),
+    frameShape: ScanFrameShape.cornersOnly,
     beamStyle: ScanBeamStyle.glowingLaser,
     lockStyle: ScanLockStyle.springSnap,
   );
@@ -307,11 +308,7 @@ class _ScannerPageState extends State<ScannerPage>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    AnimatedOpacity(
-                      duration: const Duration(milliseconds: 250),
-                      opacity: done ? 0 : 1,
-                      child: const _HintCard(),
-                    ),
+                    
                     const SizedBox(height: 18),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -453,47 +450,7 @@ class _GlassButton extends StatelessWidget {
   }
 }
 
-class _HintCard extends StatelessWidget {
-  const _HintCard();
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white.withAlpha(30),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withAlpha(40)),
-      ),
-      child: const Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Icon(Icons.qr_code_scanner_rounded, size: 20, color: _C.aqua),
-              SizedBox(width: 10),
-              Text(
-                'Align the QR code inside the frame',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 4),
-          Text(
-            'Works with KHQR from any banking app',
-            style: TextStyle(color: Colors.white70, fontSize: 12.5),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _CameraError extends StatelessWidget {
   const _CameraError({required this.error});
@@ -685,10 +642,7 @@ class _SuccessDialog extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           shape: BoxShape.rectangle,
-          border: Border.all(
-            color: _C.aqua.withAlpha((200 * (1 - ringT)).round()),
-            width: 3,
-          ),
+          
         ),
       ),
     ));
@@ -830,11 +784,7 @@ class _CardBody extends StatelessWidget {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF6F8FC),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: _C.line),
-          ),
+          
           child: Column(
             children: <Widget>[
               if (r.isKhqr) ...<Widget>[
@@ -865,7 +815,7 @@ class _CardBody extends StatelessWidget {
                 label: const Text('Copy'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: _C.ink,
-                  side: const BorderSide(color: _C.line, width: 1.4),
+                  side: const BorderSide(color: _C.line, width: 1.5),
                   minimumSize: const Size.fromHeight(50),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -911,7 +861,7 @@ class _Row extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        border: last ? null : const Border(bottom: BorderSide(color: _C.line)),
+        border: last ? null : const Border(bottom: BorderSide(color: _C.line, width: 1.5)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
